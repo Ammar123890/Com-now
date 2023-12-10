@@ -1,0 +1,96 @@
+const errorStrings = require("../../../config/errorStrings");
+const teamMemberMethods = require("../../../models/TeamMember/methods");
+const User = require("../../../models/User");
+const UserOrder = require("../../../models/UserOrder");
+
+const controller = {};
+
+controller.addMember = async function (req, res, next) {
+  try {
+    const { lang = "en" } = req.body;
+    const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
+    const existingUsers = await User.count({
+      team: req.user.team,
+      userType: "team-member",
+    });
+
+    if (existingUsers >= maxAllowedUser) {
+      throw new Error(errorStrings.CANNOT_ADD_MORE_MEMBERS[lang]);
+    }
+
+    const user = await teamMemberMethods.addMember(req.body, req.user);
+
+    res.json({
+      data: { user },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.getMembers = async function (req, res, next) {
+  try {
+    const teamMembers = await teamMemberMethods.getMembers(req.query, req.user);
+
+    res.json({
+      data: { teamMembers },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.leaveTeam = async function (req, res, next) {
+  try {
+    await teamMemberMethods.leaveTeam(req.query, req.user);
+
+    res.json({
+      data: {},
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.changeMemberStatus = async function (req, res, next) {
+  try {
+    const teamMember = await teamMemberMethods.changeStatus(
+      { ...req.body },
+      req.user
+    );
+
+    if (req.body.status === "unblocked") {
+      await teamMemberMethods.reshuffleOrdersAfterUnblock(req.body);
+    }
+
+    res.json({
+      data: { teamMember },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.deleteMember = async function (req, res, next) {
+  try {
+    await teamMemberMethods.delete(req.query, req.user);
+
+    res.json({
+      data: {},
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+module.exports = controller;

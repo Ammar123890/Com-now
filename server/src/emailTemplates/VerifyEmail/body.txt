@@ -1,0 +1,6 @@
+Hello {{fullName}},
+Thank you for registering on comnow. Please click on the the link below to continue
+{{link}}
+
+Thanks,
+Comnow

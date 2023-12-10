@@ -1,0 +1,6 @@
+Hello {{fullName}},
+Please find the code below to recover your password
+{{code}}
+
+Thanks,
+Comnow
