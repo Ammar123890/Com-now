@@ -19,8 +19,7 @@ methods.addMember = async (body, user) => {
     }
 
     const payload = {
-      firstName: body.firstName,
-      lastName: body.lastName,
+      fullName: `${body.firstName} ${body.lastName}`,
       initials: body.initials,
       team: body.group,
       enrollmentCode: {
@@ -32,8 +31,7 @@ methods.addMember = async (body, user) => {
 
     const teamMemberQuery = {
       team: body.group,
-      firstName: body.firstName,
-      lastName: body.lastName,
+      fullName: payload.fullName,
       userType: "team-member",
     };
 
@@ -121,7 +119,72 @@ methods.getMembers = async (body, user) => {
   }
 };
 
-methods.changeStatus = async (body, user) => {
+// methods.getAllMembers = async (body, user) => {
+//   try {
+//     const lang = body.lang || "en";
+//     const ALLOWED_STATUS = ["blocked", "unblocked", "all"];
+
+//     if (body.status && !ALLOWED_STATUS.includes(body.status)) {
+//       return errorStrings.UNSUPPORTED_STATUS[lang];
+//     }
+
+//     let orders = await UserOrder.findOne({ user: user._id });
+//     if (!orders) {
+//       orders = {
+//         orders: [],
+//       };
+//     }
+
+//     const rankMap = orders.orders.reduce((acc, item) => {
+//       acc[item.user] = item.rank;
+//       return acc;
+//     }, {});
+
+//     const query = {
+//       team: user.team,
+//     };
+
+//     if (body.status === "blocked") {
+//       query.blocked = true;
+//     }
+
+//     if (body.status === "unblocked") {
+//       query.blocked = false;
+//     }
+
+//     let teamMembers = await User.find(query).lean();
+
+//     teamMembers = teamMembers.map((item) => {
+//       if (item._id in rankMap) {
+//         item.rank = rankMap[item._id];
+//       }
+
+//       return item;
+//     });
+//     teamMembers = _.orderBy(teamMembers, ["rank"]);
+//     const { newData } = teamMembers.reduce(
+//       (acc, item) => {
+//         if (typeof item.rank === "number") {
+//           acc.maxRank = item.rank;
+//         } else {
+//           item.rank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
+//           acc.maxRank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
+//         }
+
+//         acc.newData.push(item);
+
+//         return acc;
+//       },
+//       { maxRank: -Infinity, newData: [] }
+//     );
+
+//     return newData;
+//   } catch (e) {
+//     throw e;
+//   }
+// }
+
+methods.changeStatus = async (body) => {
   try {
     const lang = body.lang || "en";
     const ALLOWED_STATUS = ["blocked", "unblocked"];
@@ -134,13 +197,17 @@ methods.changeStatus = async (body, user) => {
       return errorStrings.STATUS_REQUIRED[lang];
     }
 
+    if(!body.group){
+      return errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang];
+    }
+
     if (!ALLOWED_STATUS.includes(body.status)) {
       return errorStrings.UNSUPPORTED_STATUS[lang];
     }
 
     const teamMember = await User.findOne({
       _id: body.teamMember,
-      team: user.team,
+      team: body.group,
       userType: "team-member",
     });
 
@@ -184,7 +251,7 @@ methods.delete = async (body, user) => {
 
     const teamMember = await User.findOneAndDelete({
       _id: body.teamMember,
-      team: user.team,
+      team: body.group,
       userType: "team-member",
     });
 
@@ -231,7 +298,7 @@ methods.reshuffleOrdersAfterUnblock = async (body, user) => {
         try {
           const teamMembers = await methods.getMembers(
             { status: "unblocked" },
-            { _id: item.user._id, team: item.user.team }
+            { _id: item.user._id, team: body.group }
           );
           const indexOfMember = teamMembers.findIndex(
             (item) => item._id.toString() === body.teamMember

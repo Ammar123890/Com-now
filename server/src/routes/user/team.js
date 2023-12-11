@@ -16,7 +16,21 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/group", isDoctor, teamController.createNewTeam);
-
+  /**
+   * @api {POST} /user/group/get-all-groups Get all groups
+   * @apiName Get all groups
+   * @apiGroup Team
+   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token
+   */
+  router.get("/group/get-all-groups", isDoctor, teamController.getAllTeams);
+  /**
+   * @api {POST} /user/group/get-by-id
+   * @apiName Get group by id
+   * @apiGroup Team
+   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token
+   * @apiParam (body) {String} id Group's id
+   */
+  router.get("/group/get-by-id", isDoctor, teamController.getTeamById);
   /**
    * @api {POST} /user/team/online-users Get all online users
    * @apiName Get all online users
@@ -27,8 +41,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-   router.get("/team/online-users", isUser, teamController.getOnlineUsers);
-
+  router.get("/group/online-users", isUser, teamController.getOnlineUsers);
   /**
    * @api {PATCH} /user/team Edit team
    * @apiName Edit team
@@ -41,5 +54,6 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.patch("/team", isDoctor, teamController.editTeam);
+  router.patch("/group/edit", isDoctor, teamController.editTeam);
+
 };

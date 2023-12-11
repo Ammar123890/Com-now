@@ -22,11 +22,48 @@ controller.createNewTeam = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+controller.getAllMembers = async function (req, res, next) {}
+
+controller.getAllTeams = async function (req, res, next) {
+
+  try {
+    const teams = await teamMethods.getAllTeams(
+      { lang: req.body.lang },
+      req.user
+    );
+
+    res.json({
+      data: { teams },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+
+}
+
+controller.getTeamById = async function (req, res, next) {
+  try {
+    const team = await teamMethods.getTeamById(
+      { id: req.body.id, lang: req.body.lang },
+      req.user
+    );
+
+    res.json({
+      data: { team },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
 
 controller.getOnlineUsers = async function (req, res, next) {
   try {
     const onlineUsers = await teamMethods.getOnlineUsers(
-      { team: req.user.team, lang: req.body.lang },
+      { team: req.body.id, lang: req.body.lang },
       req.user
     );
 
@@ -42,7 +79,7 @@ controller.getOnlineUsers = async function (req, res, next) {
 
 controller.editTeam = async function (req, res, next) {
   try {
-    const team = await teamMethods.editTeam({ name: req.body.name, lang: req.body.lang }, req.user);
+    const team = await teamMethods.editTeam({ name: req.body.name, lang: req.body.lang }, req.user, req.body.id);
 
     res.json({
       data: { team },

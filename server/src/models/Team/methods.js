@@ -34,15 +34,52 @@ methods.createTeam = async (body, user) => {
   }
 };
 
+methods.getAllTeams = async (body, user) => {
+  const lang = body.lang || "en";
+  try {
+    const teams = await Team.find({ user: user._id }).lean();
+    if(!teams) {
+      throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
+    }
 
-methods.editTeam = async (body, user) => {
+    return teams;
+  } catch (e) {
+    throw e;
+  }
+}
+
+methods.getTeamById = async (body, user) => {
+  const lang = body.lang || "en";
+  try {
+    const team = await Team.findById(body.id).lean();
+    if(!team) {
+      throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
+    }
+
+    return team;
+  } catch (e) {
+    throw e;
+  }
+}
+
+methods.editTeam = async (body, user, groupId) => {
   try {
     const lang = body.lang || "en";
     const payload = {
       name: body.name,
     };
 
-    const team = await Team.findOneAndUpdate({ _id: user.team }, payload, {
+    //first check if the user has a team with the same name
+    const existingTeam = await Team.findOne({
+      user: user._id,
+      name: payload.name,
+    });
+
+    if (existingTeam) {
+      throw new Error(errorStrings.TEAM_SAME_NAME[lang]);
+    }
+
+    const team = await Team.findOneAndUpdate({ _id: groupId }, payload, {
       new: true,
     }).lean();
 

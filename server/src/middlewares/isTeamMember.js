@@ -40,7 +40,7 @@ const isTeamMemberTokenValid = async (authorization, req) => {
     }
 
     const doctorUser = await User.findOne({
-      team: authToken.user.team,
+      team: authToken.user.team[0],
       userType: "doctor",
     });
 

@@ -32,7 +32,7 @@ controller.addMember = async function (req, res, next) {
 
 controller.getMembers = async function (req, res, next) {
   try {
-    const teamMembers = await teamMemberMethods.getMembers(req.query, req.user);
+    const teamMembers = await teamMemberMethods.getMembers(req.body,req.user);
 
     res.json({
       data: { teamMembers },
@@ -44,9 +44,12 @@ controller.getMembers = async function (req, res, next) {
   }
 };
 
+controller.getAllMembers = async function (req, res, next) {
+}
+
 controller.leaveTeam = async function (req, res, next) {
   try {
-    await teamMemberMethods.leaveTeam(req.query, req.user);
+    await teamMemberMethods.leaveTeam(req.body, req.user);
 
     res.json({
       data: {},
@@ -62,7 +65,6 @@ controller.changeMemberStatus = async function (req, res, next) {
   try {
     const teamMember = await teamMemberMethods.changeStatus(
       { ...req.body },
-      req.user
     );
 
     if (req.body.status === "unblocked") {
@@ -81,7 +83,7 @@ controller.changeMemberStatus = async function (req, res, next) {
 
 controller.deleteMember = async function (req, res, next) {
   try {
-    await teamMemberMethods.delete(req.query, req.user);
+    await teamMemberMethods.delete(req.body, req.user);
 
     res.json({
       data: {},
