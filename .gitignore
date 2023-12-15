@@ -128,5 +128,6 @@ dist
 
 
 # firebase-service-account.json
-firebase-service-account.json
+server/firebase-service-account.json
+
 
