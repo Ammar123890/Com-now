@@ -36,6 +36,9 @@ const schema = new mongoose.Schema(
     fullName: {
       type: String,
     },
+    userName:{
+      type: String
+    },
     email: {
       type: String,
       lowercase: true,
@@ -56,10 +59,10 @@ const schema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    emailVerified: {
-      type: Boolean,
-      default: false,
-    },
+    // emailVerified: {
+    //   type: Boolean,
+    //   default: false,
+    // },
     blocked: {
       type: Boolean,
       default: false,

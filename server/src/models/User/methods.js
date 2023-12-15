@@ -373,10 +373,10 @@ methods.login = async (body) => {
       throw new Error(errorStrings.EMAIL_PASSWORD_NOT_CORRECT[lang]);
     }
 
-    if (!user.emailVerified) {
-      await methods.sendVerificationEmail({ email: user.email, lang });
-      throw new Error(errorStrings.EMAIL_NOT_VERIFIED[lang]);
-    }
+    // if (!user.emailVerified) {
+    //   await methods.sendVerificationEmail({ email: user.email, lang });
+    //   throw new Error(errorStrings.EMAIL_NOT_VERIFIED[lang]);
+    // }
 
     const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET);
     const tokenPayload = {
@@ -435,6 +435,7 @@ methods.register = async (body) => {
       password: body.password,
       userType: "doctor",
       fullName: body.fullName,
+      userName: body.userName,
       provider: ["password"],
     };
 
@@ -444,7 +445,7 @@ methods.register = async (body) => {
     const user = new User(payload);
 
     await user.save();
-    await methods.sendVerificationEmail({ email: user.email });
+  //  await methods.sendVerificationEmail({ email: user.email });
     const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
       expiresIn: "1h",
     });
