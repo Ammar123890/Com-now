@@ -14,14 +14,14 @@ methods.addMember = async (body, user) => {
       throw new Error(errorStrings.TEAM_MEMBER_NAME_REQUIRED[lang]);
     }
 
-    if (!body.group) {
-      throw new Error(errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang]);
-    }
+    // if (!body.group) {
+    //   throw new Error(errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang]);
+    // }
 
-    const payload = {
+    var payload = {
       fullName: `${body.firstName} ${body.lastName}`,
       initials: body.initials,
-      team: body.group,
+      defaultTeam: body.team,
       enrollmentCode: {
         code: methods.generateCode(),
         expiry: null,
@@ -29,11 +29,16 @@ methods.addMember = async (body, user) => {
       userType: "team-member",
     };
 
+    if (body.type === "group") {
+      payload.team = body.group;
+    }
+
     const teamMemberQuery = {
-      team: body.group,
+      team: payload.team || payload.defaultTeam,
       fullName: payload.fullName,
-      userType: "team-member",
+      userType: payload.userType,
     };
+    
 
     let newUser = await User.findOne(teamMemberQuery).lean();
     if (newUser) {
@@ -197,7 +202,7 @@ methods.changeStatus = async (body) => {
       return errorStrings.STATUS_REQUIRED[lang];
     }
 
-    if(!body.group){
+    if (!body.group) {
       return errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang];
     }
 

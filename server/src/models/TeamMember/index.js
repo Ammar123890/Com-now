@@ -33,6 +33,12 @@ const schema = new mongoose.Schema(
     team: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "team",
+      default: null,
+    },
+    defaultTeam: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "team",
+      default: null,
     },
     color:{
       type: String,

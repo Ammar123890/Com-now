@@ -11,13 +11,16 @@ const keys = require("../../../config/keys");
 const errorStrings = require("../../../config/errorStrings");
 const Notification = require("../../../models/Notification");
 const UserOrder = require("../../../models/UserOrder");
+const createDefaultTeam = require("../../../controllers/user/team");
 
 const controller = {};
 
 controller.register = async function (req, res, next) {
-  console.log(req.body);
   try {
     const registerResponse = await userMethods.register(req.body);
+    //create a team of the user
+    const team = await createDefaultTeam.createDefaultTeam(registerResponse.user);
+
     res.json({
       data: {
         user: userMethods.getUserPublicProfile(registerResponse.user),

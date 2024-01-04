@@ -14,6 +14,10 @@ const schema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    team:{
+      type: Boolean,
+      default: false,
+    }
   },
   {
     timestamps: true,

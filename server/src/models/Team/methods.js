@@ -7,7 +7,7 @@ const methods = {};
 
 methods.createTeam = async (body, user) => {
   const lang = body.lang || "en";
- // console.log("here");
+  // console.log("here");
   try {
     const teamName = body.name;
 
@@ -17,17 +17,27 @@ methods.createTeam = async (body, user) => {
       throw new Error(errorStrings.TEAM_SAME_NAME[lang]);
     }
 
+    let team;
     // Create a new team
-    const team = new Team({ user: user._id, name: teamName });
+    if (teamName === "allTeamMember") {
+      team = new Team({ user: user._id, name: teamName, team: true });
+    }
+    else {
+      team = new Team({ user: user._id, name: teamName });
+    }
     await team.save();
+   // console.log("tam"+team);
 
-    // Add the new team to the user's teams array
+
+
+    // Add the new team to the user's teams array  
     await User.findByIdAndUpdate(
       user._id,
       { $push: { team: team._id } },
       { new: true, safe: true, upsert: true }
     ).lean();
 
+    // console.log(user.team);
     return team;
   } catch (e) {
     throw e;
@@ -37,8 +47,10 @@ methods.createTeam = async (body, user) => {
 methods.getAllTeams = async (body, user) => {
   const lang = body.lang || "en";
   try {
-    const teams = await Team.find({ user: user._id }).lean();
-    if(!teams) {
+
+    //return teams where team is false
+    const teams = await Team.find({ user: user._id, team: false }).lean();
+    if (!teams) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
 
@@ -52,7 +64,7 @@ methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";
   try {
     const team = await Team.findById(body.id).lean();
-    if(!team) {
+    if (!team) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
 

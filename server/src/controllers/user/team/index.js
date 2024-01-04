@@ -22,6 +22,20 @@ controller.createNewTeam = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
+controller.createDefaultTeam = async function (user) {
+  try {
+    const team = await teamMethods.createTeam(
+      { name: "allTeamMember" },
+      user,
+    );
+    
+  } catch (e) {
+    throw e;
+  }
+}
+
+
 controller.getAllMembers = async function (req, res, next) {}
 
 controller.getAllTeams = async function (req, res, next) {
