@@ -4,55 +4,105 @@ const _ = require("lodash");
 const errorStrings = require("../../config/errorStrings");
 const User = require("../User");
 const UserOrder = require("../UserOrder");
+const team = require("../../routes/user/team");
 
 const methods = {};
 
-methods.addMember = async (body, user) => {
+methods.addMember = async (body, user, type, groupId) => {
   try {
     const lang = body.lang || "en";
     if (!body.firstName || !body.lastName) {
       throw new Error(errorStrings.TEAM_MEMBER_NAME_REQUIRED[lang]);
     }
 
-    // if (!body.group) {
-    //   throw new Error(errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang]);
-    // }
-
+    // Prepare the common payload
     var payload = {
       fullName: `${body.firstName} ${body.lastName}`,
       initials: body.initials,
-      defaultTeam: body.team,
+      userType: "team-member",
       enrollmentCode: {
         code: methods.generateCode(),
         expiry: null,
       },
-      userType: "team-member",
+      ...body.otherFields
     };
 
-    if (body.type === "group") {
-      payload.team = body.group;
-    }
-
+    // Check if the user already exists in any team
     const teamMemberQuery = {
-      team: payload.team || payload.defaultTeam,
       fullName: payload.fullName,
       userType: payload.userType,
     };
-    
 
-    let newUser = await User.findOne(teamMemberQuery).lean();
-    if (newUser) {
+    let existingUser = await User.findOne(teamMemberQuery).lean();
+
+    if (existingUser) {
+      // Check if the user is already in any team
+      if (existingUser.team.length > 0) {
+        throw new Error(errorStrings.TEAM_MEMBER_ALREADY_IN_A_TEAM[lang]);
+      }
+
+      // If adding to a specific group, add them to that group
+      if (type === 'group') {
+        await User.findByIdAndUpdate(existingUser._id, { $set: { team: [groupId] } });
+        return existingUser;
+      }
       throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
+    } else {
+      // If the user doesn't exist in any team, create and add them
+      let newUser = new User(payload);
+      await newUser.save();
+
+      // If adding to a specific group, add them to that group
+      if (type === 'group') {
+        await User.findByIdAndUpdate(newUser._id, { $set: { team: [groupId] } });
+      }
+
+      return newUser;
     }
-
-    newUser = new User(payload);
-    await newUser.save();
-
-    return newUser;
   } catch (e) {
     throw e;
   }
 };
+
+
+//   try {
+//     const lang = body.lang || "en";
+//     if (!body.firstName || !body.lastName) {
+//       throw new Error(errorStrings.TEAM_MEMBER_NAME_REQUIRED[lang]);
+//     }
+
+//     var payload = {
+//       fullName: `${body.firstName} ${body.lastName}`,
+//       initials: body.initials,
+//       defaultTeam: user.defaultTeam,
+//       ...(!body.group? team: body.group ),
+//       enrollmentCode: {
+//         code: methods.generateCode(),
+//         expiry: null,
+//       },
+//       userType: "team-member",
+//     };
+
+//     const teamMemberQuery = {
+//       team: payload.defaultTeam,
+//       fullName: payload.fullName,
+//       userType: payload.userType,
+//     };
+    
+
+//     let newUser = await User.findOne(teamMemberQuery).lean();
+//     if (newUser) {
+//       throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
+//     }
+
+//     newUser = new User(payload);
+//     await newUser.save();
+
+//     return newUser;
+//   } catch (e) {
+//     throw e;
+//   }
+// };
 
 methods.getMembers = async (body, user) => {
   try {
@@ -63,10 +113,9 @@ methods.getMembers = async (body, user) => {
       return errorStrings.UNSUPPORTED_STATUS[lang];
     }
 
-    console.log(body);
-    if (!body.group) {
-      throw new Error(errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang]);
-    }
+    // Determine the field to search (team or defaultTeam) based on provided group ID
+    const isDefaultTeam = !body.group || body.group === user.defaultTeam.toString();
+    const teamField = isDefaultTeam ? 'defaultTeam' : 'team';
 
     let orders = await UserOrder.findOne({ user: user._id });
     if (!orders) {
@@ -81,7 +130,7 @@ methods.getMembers = async (body, user) => {
     }, {});
 
     const query = {
-      team: body.group,
+      [teamField]: isDefaultTeam ? user.defaultTeam : body.group,
     };
 
     if (body.status === "blocked") {
@@ -123,71 +172,6 @@ methods.getMembers = async (body, user) => {
     throw e;
   }
 };
-
-// methods.getAllMembers = async (body, user) => {
-//   try {
-//     const lang = body.lang || "en";
-//     const ALLOWED_STATUS = ["blocked", "unblocked", "all"];
-
-//     if (body.status && !ALLOWED_STATUS.includes(body.status)) {
-//       return errorStrings.UNSUPPORTED_STATUS[lang];
-//     }
-
-//     let orders = await UserOrder.findOne({ user: user._id });
-//     if (!orders) {
-//       orders = {
-//         orders: [],
-//       };
-//     }
-
-//     const rankMap = orders.orders.reduce((acc, item) => {
-//       acc[item.user] = item.rank;
-//       return acc;
-//     }, {});
-
-//     const query = {
-//       team: user.team,
-//     };
-
-//     if (body.status === "blocked") {
-//       query.blocked = true;
-//     }
-
-//     if (body.status === "unblocked") {
-//       query.blocked = false;
-//     }
-
-//     let teamMembers = await User.find(query).lean();
-
-//     teamMembers = teamMembers.map((item) => {
-//       if (item._id in rankMap) {
-//         item.rank = rankMap[item._id];
-//       }
-
-//       return item;
-//     });
-//     teamMembers = _.orderBy(teamMembers, ["rank"]);
-//     const { newData } = teamMembers.reduce(
-//       (acc, item) => {
-//         if (typeof item.rank === "number") {
-//           acc.maxRank = item.rank;
-//         } else {
-//           item.rank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
-//           acc.maxRank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
-//         }
-
-//         acc.newData.push(item);
-
-//         return acc;
-//       },
-//       { maxRank: -Infinity, newData: [] }
-//     );
-
-//     return newData;
-//   } catch (e) {
-//     throw e;
-//   }
-// }
 
 methods.changeStatus = async (body) => {
   try {
@@ -254,14 +238,22 @@ methods.delete = async (body, user) => {
       throw new Error(errorStrings.TEAM_MEMBER_ID_REQUIRED[lang]);
     }
 
-    const teamMember = await User.findOneAndDelete({
-      _id: body.teamMember,
-      team: body.group,
-      userType: "team-member",
-    });
+    const teamMemberId = body.teamMember;
+    const groupId = body.group || user.defaultTeam; // Use defaultTeam if group is not provided
 
+    // Find the team member
+    const teamMember = await User.findById(teamMemberId);
     if (!teamMember) {
       throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
+    }
+
+    // Delete from specific team/group or from default team
+    if (groupId.toString() === teamMember.defaultTeam.toString()) {
+      // If deleting from default team, remove the user entirely
+      await User.findByIdAndDelete(teamMemberId);
+    } else {
+      // If deleting from a specific team/group, remove the team from the user's team list
+      await User.findByIdAndUpdate(teamMemberId, { $pull: { team: groupId } });
     }
 
     return null;
@@ -270,13 +262,21 @@ methods.delete = async (body, user) => {
   }
 };
 
+
+
 methods.leaveTeam = async (body, user) => {
+  const type = body.type;
   try {
     const lang = body.lang || "en";
-    const teamMember = await User.findOneAndDelete({
+
+    // Define the update object based on the type
+    const update = (type === "group") ? { leavedGroup: true } : { leavedTeam: true };
+
+    // Use the update object in findOneAndUpdate
+    const teamMember = await User.findOneAndUpdate({
       _id: user._id,
       userType: "team-member",
-    });
+    }, update);
 
     if (!teamMember) {
       throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);

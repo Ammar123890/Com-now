@@ -62,7 +62,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.delete("/group-member/leave", isTeamMember, teamController.leaveTeam);
+  router.patch("/group-member/leave", isTeamMember, teamController.leaveTeam);
   /**
    * @api {DELETE} /user/team-member Delete team member
    * @apiName Delete team member

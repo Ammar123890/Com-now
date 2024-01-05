@@ -5,12 +5,14 @@ const UserOrder = require("../../../models/UserOrder");
 
 const controller = {};
 
+
 controller.addMember = async function (req, res, next) {
   try {
-    const { lang = "en" } = req.body;
+    const { lang = "en", type, group } = req.body;
     const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
+    const teamId = type === 'group' ? group : req.user.defaultTeam;
     const existingUsers = await User.count({
-      team: req.user.team,
+      team: { $in: [req.user.defaultTeam] },
       userType: "team-member",
     });
 
@@ -18,7 +20,7 @@ controller.addMember = async function (req, res, next) {
       throw new Error(errorStrings.CANNOT_ADD_MORE_MEMBERS[lang]);
     }
 
-    const user = await teamMemberMethods.addMember(req.body, req.user);
+    const user = await teamMemberMethods.addMember(req.body, req.user, type, group);
 
     res.json({
       data: { user },
@@ -29,6 +31,34 @@ controller.addMember = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
+
+
+
+// controller.addMember = async function (req, res, next) {
+//   try {
+//     const { lang = "en" } = req.body;
+//     const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
+//     const existingUsers = await User.count({
+//       team: req.user.team,
+//       userType: "team-member",
+//     });
+
+//     if (existingUsers >= maxAllowedUser) {
+//       throw new Error(errorStrings.CANNOT_ADD_MORE_MEMBERS[lang]);
+//     }
+
+//     const user = await teamMemberMethods.addMember(req.body, req.user);
+
+//     res.json({
+//       data: { user },
+//       success: true,
+//       message: "Successful",
+//     });
+//   } catch (e) {
+//     next({ message: e, status: 400 });
+//   }
+// };
 
 controller.getMembers = async function (req, res, next) {
   try {
@@ -83,6 +113,7 @@ controller.changeMemberStatus = async function (req, res, next) {
 
 controller.deleteMember = async function (req, res, next) {
   try {
+    // Pass only the teamMember ID and group ID (if provided)
     await teamMemberMethods.delete(req.body, req.user);
 
     res.json({

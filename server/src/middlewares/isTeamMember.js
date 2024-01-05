@@ -44,9 +44,9 @@ const isTeamMemberTokenValid = async (authorization, req) => {
       userType: "doctor",
     });
 
-    if (!doctorUser.subscription.isSubscribed) {
-      throw new Error(errorStrings.SUBSCRIPTION_NEEDED[lang]);
-    }
+    // if (!doctorUser.subscription.isSubscribed) {
+    //   throw new Error(errorStrings.SUBSCRIPTION_NEEDED[lang]);
+    // }
 
     return authToken;
   } catch (e) {

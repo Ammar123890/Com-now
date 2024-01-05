@@ -55,18 +55,21 @@ const schema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    deleted: {
+    leavedTeam: {
       type: Boolean,
       default: false,
     },
-    // emailVerified: {
-    //   type: Boolean,
-    //   default: false,
-    // },
+    leavedGroup: {
+      type: Boolean,
+      default: false,
+    },
     blocked: {
       type: Boolean,
       default: false,
     },
+
+
+
     provider: {
       type: Array,
     },
@@ -78,9 +81,15 @@ const schema = new mongoose.Schema(
         type: Date,
       },
     },
+    defaultTeam: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "team",
+      default: null,
+    },
     team: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "team",
+      default: null,
     }],
     otp: {
       type: otpSchema,

@@ -7,7 +7,6 @@ const methods = {};
 
 methods.createTeam = async (body, user) => {
   const lang = body.lang || "en";
-  // console.log("here");
   try {
     const teamName = body.name;
 
@@ -17,27 +16,25 @@ methods.createTeam = async (body, user) => {
       throw new Error(errorStrings.TEAM_SAME_NAME[lang]);
     }
 
-    let team;
     // Create a new team
-    if (teamName === "allTeamMember") {
-      team = new Team({ user: user._id, name: teamName, team: true });
-    }
-    else {
-      team = new Team({ user: user._id, name: teamName });
-    }
+    const team = new Team({ user: user._id, name: teamName });
     await team.save();
-   // console.log("tam"+team);
 
+    // Update User: Set 'defaultTeam' if teamName is 'allTeamMember', else push to 'team' array
+    if (teamName === "allTeamMember") {
+      await User.findByIdAndUpdate(
+        user._id,
+        { defaultTeam: team._id },
+        { new: true, safe: true, upsert: true }
+      ).lean();
+    } else {
+      await User.findByIdAndUpdate(
+        user._id,
+        { $push: { team: team._id } },
+        { new: true, safe: true, upsert: true }
+      ).lean();
+    }
 
-
-    // Add the new team to the user's teams array  
-    await User.findByIdAndUpdate(
-      user._id,
-      { $push: { team: team._id } },
-      { new: true, safe: true, upsert: true }
-    ).lean();
-
-    // console.log(user.team);
     return team;
   } catch (e) {
     throw e;
@@ -47,10 +44,13 @@ methods.createTeam = async (body, user) => {
 methods.getAllTeams = async (body, user) => {
   const lang = body.lang || "en";
   try {
+    // Return teams where the name is not "allTeamMember"
+    const teams = await Team.find({ 
+      user: user._id, 
+      name: { $ne: "allTeamMember" } // $ne stands for 'not equal'
+    }).lean();
 
-    //return teams where team is false
-    const teams = await Team.find({ user: user._id, team: false }).lean();
-    if (!teams) {
+    if (!teams || teams.length === 0) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
 
@@ -59,6 +59,7 @@ methods.getAllTeams = async (body, user) => {
     throw e;
   }
 }
+
 
 methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";

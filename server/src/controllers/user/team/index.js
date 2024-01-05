@@ -29,6 +29,8 @@ controller.createDefaultTeam = async function (user) {
       { name: "allTeamMember" },
       user,
     );
+
+    return team;
     
   } catch (e) {
     throw e;

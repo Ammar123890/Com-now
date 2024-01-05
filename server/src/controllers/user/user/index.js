@@ -18,8 +18,10 @@ const controller = {};
 controller.register = async function (req, res, next) {
   try {
     const registerResponse = await userMethods.register(req.body);
+    
     //create a team of the user
     const team = await createDefaultTeam.createDefaultTeam(registerResponse.user);
+
 
     res.json({
       data: {
