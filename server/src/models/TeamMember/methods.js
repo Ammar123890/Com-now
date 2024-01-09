@@ -24,6 +24,7 @@ methods.addMember = async (body, user, type, groupId) => {
         code: methods.generateCode(),
         expiry: null,
       },
+      color: body.color,
       ...body.otherFields
     };
 

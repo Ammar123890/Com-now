@@ -118,6 +118,14 @@ module.exports = {
     fr: "Le nom du membre du groupe est requis",
     it: "È richiesto il nome del membro del gruppo"
   },
+  TEAM_MEMBER_ALREADY_IN_A_TEAM:
+  {
+    en: "Group member is already in a group",
+    de: "Gruppenmitglied ist bereits in einer Gruppe",
+    es: "El miembro del grupo ya está en un grupo",
+    fr: "Le membre du groupe est déjà dans un groupe",
+    it: "Il membro del gruppo è già in un gruppo"
+  },
   TEAM_ID_REQUIRED: {
     en: "Group ID is required",
     de: "Gruppen-ID ist erforderlich",

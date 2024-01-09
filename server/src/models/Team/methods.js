@@ -44,11 +44,30 @@ methods.createTeam = async (body, user) => {
 methods.getAllTeams = async (body, user) => {
   const lang = body.lang || "en";
   try {
-    // Return teams where the name is not "allTeamMember"
-    const teams = await Team.find({ 
-      user: user._id, 
-      name: { $ne: "allTeamMember" } // $ne stands for 'not equal'
-    }).lean();
+    // Return teams where the name is not "allTeamMember"  and also the  total number of members in each team
+
+    const teams = await Team.aggregate([
+      {
+        $match: {
+          user: user._id,
+          name: { $ne: "allTeamMember" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "team",
+          as: "users",
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          users: { $size: "$users" },
+        },
+      },
+    ]);
 
     if (!teams || teams.length === 0) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);

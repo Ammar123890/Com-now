@@ -78,6 +78,9 @@ const schema = new mongoose.Schema(
         type: Date,
       },
     },
+    color: {
+      type: String,
+    },
     defaultTeam: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "team",
