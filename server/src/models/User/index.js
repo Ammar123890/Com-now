@@ -36,7 +36,7 @@ const schema = new mongoose.Schema(
     fullName: {
       type: String,
     },
-    userName:{
+    userName: {
       type: String
     },
     email: {
@@ -67,9 +67,6 @@ const schema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
-
-
     provider: {
       type: Array,
     },

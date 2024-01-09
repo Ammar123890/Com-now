@@ -348,10 +348,8 @@ methods.login = async (body) => {
     if (!body.password) {
       throw new Error(errorStrings.PASSWORD_REQUIRED[lang]);
     }
-
     const userQuery = {
       email: body.email,
-      deleted: false,
     };
     const user = await User.findOne(userQuery)
       .populate("team")
@@ -437,6 +435,7 @@ methods.register = async (body) => {
       fullName: body.fullName,
       userName: body.userName,
       provider: ["password"],
+    
     };
 
     const generatedSalt = await bcrypt.genSalt(keys.SALT);
@@ -445,7 +444,7 @@ methods.register = async (body) => {
     const user = new User(payload);
 
     await user.save();
-  //  await methods.sendVerificationEmail({ email: user.email });
+   // await methods.sendVerificationEmail({ email: user.email });
     const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
       expiresIn: "1h",
     });
