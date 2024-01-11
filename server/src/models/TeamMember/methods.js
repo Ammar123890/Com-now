@@ -65,45 +65,38 @@ methods.addMember = async (body, user, type, groupId) => {
   }
 };
 
+methods.reAddMember = async (body, user) => {  
+  try {
+    const lang = body.lang || "en";
+    if (!body.teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_ID_REQUIRED[lang]);
+    }
 
-//   try {
-//     const lang = body.lang || "en";
-//     if (!body.firstName || !body.lastName) {
-//       throw new Error(errorStrings.TEAM_MEMBER_NAME_REQUIRED[lang]);
-//     }
+    const teamMemberId = body.teamMember;
+    const groupId = body.group || user.defaultTeam; // Use defaultTeam if group is not provided
 
-//     var payload = {
-//       fullName: `${body.firstName} ${body.lastName}`,
-//       initials: body.initials,
-//       defaultTeam: user.defaultTeam,
-//       ...(!body.group? team: body.group ),
-//       enrollmentCode: {
-//         code: methods.generateCode(),
-//         expiry: null,
-//       },
-//       userType: "team-member",
-//     };
+    // Find the team member
+    const teamMember = await User.findById(teamMemberId);
+    if (!teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
+    }
 
-//     const teamMemberQuery = {
-//       team: payload.defaultTeam,
-//       fullName: payload.fullName,
-//       userType: payload.userType,
-//     };
-    
+    // Check if the user is in the default team
+    if (teamMember.defaultTeam.toString() !== groupId.toString()) {
+      throw new Error(errorStrings.TEAM_MEMBER_NOT_IN_DEFAULT_TEAM[lang]);
+    }
 
-//     let newUser = await User.findOne(teamMemberQuery).lean();
-//     if (newUser) {
-//       throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
-//     }
+    // Generate a new code and update the user
+    const newCode = methods.generateCode();
+    await User.findByIdAndUpdate(teamMemberId, { $set: { "enrollmentCode.code": newCode, "leavedTeam":false } });
+    //return the user with new code
+    return await User.findById(teamMemberId);
+  }
+  catch (e) {
+    throw e;
+  }
 
-//     newUser = new User(payload);
-//     await newUser.save();
-
-//     return newUser;
-//   } catch (e) {
-//     throw e;
-//   }
-// };
+}
 
 methods.getMembers = async (body, user) => {
   try {
@@ -262,8 +255,6 @@ methods.delete = async (body, user) => {
     throw e;
   }
 };
-
-
 
 methods.leaveTeam = async (body, user) => {
   const type = body.type;

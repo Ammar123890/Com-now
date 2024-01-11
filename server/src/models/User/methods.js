@@ -481,7 +481,10 @@ methods.loginTeamMember = async (body) => {
         {
           "enrollmentCode.expiry": null,
         },
+      
       ],
+        //check if the user is blocked or not
+        "isBlocked": false,
     };
 
     const user = await User.findOne(query).populate("team").lean();

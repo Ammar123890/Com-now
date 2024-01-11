@@ -81,5 +81,5 @@ app.use((err, _, res, _a) => {
 // require("./src/utils/dataGenerator").addSubscription();
 
 httpServer.listen(keys.PORT, () => {
-  console.log("Server running on PORT:", keys.PORT);
+  console.log("Server running on PORT: ", keys.PORT);
 });

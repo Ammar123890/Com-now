@@ -32,33 +32,20 @@ controller.addMember = async function (req, res, next) {
   }
 };
 
+controller.reAddMember = async function (req, res, next) {
+  try {
 
+    const user = await teamMemberMethods.reAddMember(req.body, req.user);
 
-
-// controller.addMember = async function (req, res, next) {
-//   try {
-//     const { lang = "en" } = req.body;
-//     const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
-//     const existingUsers = await User.count({
-//       team: req.user.team,
-//       userType: "team-member",
-//     });
-
-//     if (existingUsers >= maxAllowedUser) {
-//       throw new Error(errorStrings.CANNOT_ADD_MORE_MEMBERS[lang]);
-//     }
-
-//     const user = await teamMemberMethods.addMember(req.body, req.user);
-
-//     res.json({
-//       data: { user },
-//       success: true,
-//       message: "Successful",
-//     });
-//   } catch (e) {
-//     next({ message: e, status: 400 });
-//   }
-// };
+    res.json({
+      data: { user },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
 
 controller.getMembers = async function (req, res, next) {
   try {

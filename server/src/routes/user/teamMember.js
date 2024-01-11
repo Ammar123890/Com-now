@@ -18,6 +18,14 @@ module.exports = function (router) {
    */
   router.post("/group-member", isDoctor, teamController.addMember);
   /**
+   * @api {PATCH} /group-member/readd  - Re add team member
+   * @apiName Re add team member
+   * @apiGroup Team Member
+   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token
+   * @apiParam (body) {String} id Team member's id
+   **/
+  router.patch("/group-member/readd", isDoctor, teamController.reAddMember);
+  /**
    * @api {GET} /user/team-member Get all team members
    * @apiName Get all team members of a specific group
    * @apiGroup Team Member

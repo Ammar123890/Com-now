@@ -84,6 +84,7 @@ methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";
   try {
     const team = await Team.findById(body.id).lean();
+    console.log(team);
     if (!team) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
