@@ -98,20 +98,20 @@ methods.reAddMember = async (body, user) => {
 
 }
 
-methods.getMembers = async (body, user) => {
+methods.getMembers = async (req) => {
   try {
-    const lang = body.lang || "en";
+    const lang = req.query.lang || "en";
     const ALLOWED_STATUS = ["blocked", "unblocked", "all"];
 
-    if (body.status && !ALLOWED_STATUS.includes(body.status)) {
+    if (req.query.status && !ALLOWED_STATUS.includes(req.query.status)) {
       return errorStrings.UNSUPPORTED_STATUS[lang];
     }
 
     // Determine the field to search (team or defaultTeam) based on provided group ID
-    const isDefaultTeam = !body.group || body.group === user.defaultTeam.toString();
+    const isDefaultTeam = !req.query.group || req.query.group === req.user.defaultTeam.toString();
     const teamField = isDefaultTeam ? 'defaultTeam' : 'team';
 
-    let orders = await UserOrder.findOne({ user: user._id });
+    let orders = await UserOrder.findOne({ user: req.user._id });
     if (!orders) {
       orders = {
         orders: [],
@@ -124,14 +124,14 @@ methods.getMembers = async (body, user) => {
     }, {});
 
     const query = {
-      [teamField]: isDefaultTeam ? user.defaultTeam : body.group,
+      [teamField]: isDefaultTeam ? req.user.defaultTeam : req.query.group,
     };
 
-    if (body.status === "blocked") {
+    if (req.query.status === "blocked") {
       query.blocked = true;
     }
 
-    if (body.status === "unblocked") {
+    if (req.query.status === "unblocked") {
       query.blocked = false;
     }
 

@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-
 const constants = require("../config/constants");
 const AuthorizationToken = require("../models/AuthorizationToken");
 const User = require("../models/User");
@@ -14,6 +13,7 @@ const isTokenValid = async (authorization, req) => {
     }
 
     const token = authorization.split(" ")[1];
+    console.log("token", token);
 
     if (!token) {
       throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);

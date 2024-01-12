@@ -49,7 +49,7 @@ controller.reAddMember = async function (req, res, next) {
 
 controller.getMembers = async function (req, res, next) {
   try {
-    const teamMembers = await teamMemberMethods.getMembers(req.body,req.user);
+    const teamMembers = await teamMemberMethods.getMembers(req);
 
     res.json({
       data: { teamMembers },

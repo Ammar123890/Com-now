@@ -66,6 +66,7 @@ const isDoctorTokenValid = async (authorization, req) => {
 
 const isDoctor = async (req, _res, next) => {
   try {
+    console.log("isDoctor");  
     const authToken = await isDoctorTokenValid(req.headers.authorization, req);
 
     const user = authToken.user;

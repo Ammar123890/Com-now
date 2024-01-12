@@ -30,7 +30,7 @@ module.exports = function (router) {
    * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token
    * @apiParam (body) {String} id Group's id
    */
-  router.get("/group/get-by-id", isDoctor, teamController.getTeamById);
+  router.get("/group/get-by-id/:id", isDoctor, teamController.getTeamById);
   /**
    * @api {POST} /user/team/online-users Get all online users
    * @apiName Get all online users
@@ -41,7 +41,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.get("/group/online-users", isUser, teamController.getOnlineUsers);
+  router.get("/group/online-users/:id", isUser, teamController.getOnlineUsers);
   /**
    * @api {PATCH} /user/team Edit team
    * @apiName Edit team

@@ -44,7 +44,7 @@ controller.getAllTeams = async function (req, res, next) {
 
   try {
     const teams = await teamMethods.getAllTeams(
-      { lang: req.body.lang },
+      { lang: req.query.lang },
       req.user
     );
 
@@ -62,7 +62,7 @@ controller.getAllTeams = async function (req, res, next) {
 controller.getTeamById = async function (req, res, next) {
   try {
     const team = await teamMethods.getTeamById(
-      { id: req.body.id, lang: req.body.lang },
+      { id: req.params.id, lang: req.body.lang },
       req.user
     );
 
@@ -77,9 +77,11 @@ controller.getTeamById = async function (req, res, next) {
 }
 
 controller.getOnlineUsers = async function (req, res, next) {
+
+  console.log(req.query.lang);
   try {
     const onlineUsers = await teamMethods.getOnlineUsers(
-      { team: req.body.id, lang: req.body.lang },
+      { team: req.params.id, lang: req.query.lang },
       req.user
     );
 

@@ -484,10 +484,13 @@ methods.loginTeamMember = async (body) => {
       
       ],
         //check if the user is blocked or not
-        "isBlocked": false,
+        "blocked": false,
     };
+    console.log(query);
 
+ 
     const user = await User.findOne(query).populate("team").lean();
+ 
 
     if (!user) {
       throw new Error(errorStrings.USER_NOT_FOUND[lang]);
