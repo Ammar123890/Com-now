@@ -64,7 +64,9 @@ methods.getAllTeams = async (body, user) => {
       {
         $project: {
           name: 1,
-          users: { $size: "$users" },
+          users: {
+            $subtract: [{ $size: "$users" }, 1]  // Subtract 1 from the size of the users array
+          },
         },
       },
     ]);
@@ -78,7 +80,6 @@ methods.getAllTeams = async (body, user) => {
     throw e;
   }
 }
-
 
 methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";

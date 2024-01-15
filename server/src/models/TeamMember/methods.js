@@ -20,6 +20,7 @@ methods.addMember = async (body, user, type, groupId) => {
       fullName: `${body.firstName} ${body.lastName}`,
       initials: body.initials,
       userType: "team-member",
+      defaultTeam: user.defaultTeam,
       enrollmentCode: {
         code: methods.generateCode(),
         expiry: null,
@@ -32,6 +33,7 @@ methods.addMember = async (body, user, type, groupId) => {
     const teamMemberQuery = {
       fullName: payload.fullName,
       userType: payload.userType,
+      defaultTeam: payload.defaultTeam,
     };
 
     let existingUser = await User.findOne(teamMemberQuery).lean();
@@ -57,7 +59,6 @@ methods.addMember = async (body, user, type, groupId) => {
       if (type === 'group') {
         await User.findByIdAndUpdate(newUser._id, { $set: { team: [groupId] } });
       }
-
       return newUser;
     }
   } catch (e) {
@@ -73,7 +74,6 @@ methods.reAddMember = async (body, user) => {
     }
 
     const teamMemberId = body.teamMember;
-    const groupId = body.group || user.defaultTeam; // Use defaultTeam if group is not provided
 
     // Find the team member
     const teamMember = await User.findById(teamMemberId);
@@ -81,14 +81,15 @@ methods.reAddMember = async (body, user) => {
       throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
     }
 
-    // Check if the user is in the default team
-    if (teamMember.defaultTeam.toString() !== groupId.toString()) {
-      throw new Error(errorStrings.TEAM_MEMBER_NOT_IN_DEFAULT_TEAM[lang]);
-    }
+
 
     // Generate a new code and update the user
     const newCode = methods.generateCode();
-    await User.findByIdAndUpdate(teamMemberId, { $set: { "enrollmentCode.code": newCode, "leavedTeam":false } });
+
+    // Update the user with new code and leavedTeam = false if the body contains type = team and leavedGroup = false if the body contains type = group
+    const update = (body.type === "group") ? { "enrollmentCode.code": newCode, "leavedGroup":false } : { "enrollmentCode.code": newCode, "leavedTeam":false };
+    await User.findByIdAndUpdate(teamMemberId, { $set: update });
+
     //return the user with new code
     return await User.findById(teamMemberId);
   }
@@ -125,6 +126,7 @@ methods.getMembers = async (req) => {
 
     const query = {
       [teamField]: isDefaultTeam ? req.user.defaultTeam : req.query.group,
+      userType: "team-member",
     };
 
     if (req.query.status === "blocked") {
@@ -231,28 +233,11 @@ methods.delete = async (body, user) => {
     if (!body.teamMember) {
       throw new Error(errorStrings.TEAM_MEMBER_ID_REQUIRED[lang]);
     }
-
     const teamMemberId = body.teamMember;
-    const groupId = body.group || user.defaultTeam; // Use defaultTeam if group is not provided
-
-    // Find the team member
-    const teamMember = await User.findById(teamMemberId);
-    if (!teamMember) {
-      throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
-    }
-
-    // Delete from specific team/group or from default team
-    if (groupId.toString() === teamMember.defaultTeam.toString()) {
-      // If deleting from default team, remove the user entirely
-      await User.findByIdAndDelete(teamMemberId);
-    } else {
-      // If deleting from a specific team/group, remove the team from the user's team list
-      await User.findByIdAndUpdate(teamMemberId, { $pull: { team: groupId } });
-    }
-
-    return null;
+    // Find the team member and delete
+    await User.findByIdAndDelete(teamMemberId);
   } catch (e) {
-    throw e;
+    throw e; 
   }
 };
 
