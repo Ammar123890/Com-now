@@ -31,14 +31,11 @@ controller.createDefaultTeam = async function (user) {
     );
 
     return team;
-    
+
   } catch (e) {
     throw e;
   }
 }
-
-
-controller.getAllMembers = async function (req, res, next) {}
 
 controller.getAllTeams = async function (req, res, next) {
 
@@ -101,6 +98,18 @@ controller.editTeam = async function (req, res, next) {
 
     res.json({
       data: { team },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.deleteTeam = async function (req, res, next) {
+  try {
+    await teamMethods.deleteById(req.params.id, req.user);
+    res.json({
       success: true,
       message: "Successful",
     });

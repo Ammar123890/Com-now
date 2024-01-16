@@ -80,14 +80,25 @@ controller.leaveTeam = async function (req, res, next) {
 
 controller.changeMemberStatus = async function (req, res, next) {
   try {
-    const teamMember = await teamMemberMethods.changeStatus(
-      { ...req.body },
-    );
+    const teamMember = await teamMemberMethods.changeStatus(req.body, req.user  );
 
     if (req.body.status === "unblocked") {
       await teamMemberMethods.reshuffleOrdersAfterUnblock(req.body);
     }
 
+    res.json({
+      data: { teamMember },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.editMember = async function (req, res, next) {
+  try {
+    const teamMember = await teamMemberMethods.editMember(req.body, req.user);
     res.json({
       data: { teamMember },
       success: true,

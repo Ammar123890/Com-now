@@ -58,8 +58,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.patch("/group-member/status", isDoctor, teamController.changeMemberStatus
-  );
+  router.patch("/group-member/status", isDoctor, teamController.changeMemberStatus);
   /**
    * @api {DELETE} /user/team-member/leave Leave team member
    * @apiName Leave team member
@@ -90,4 +89,11 @@ module.exports = function (router) {
    * @apiGroup Team Member
    **/
   router.patch("/group-member/readd", isDoctor, teamController.reAddMember);
+  /**
+   * @api {PATCH} /user/team-member/edit Edit team member
+   * @apiName Edit team member
+   * @apiGroup Team Member
+  **/
+  router.patch("/group-member/edit", isDoctor, teamController.editMember);
+
 };

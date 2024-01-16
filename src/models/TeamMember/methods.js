@@ -33,7 +33,7 @@ methods.addMember = async (body, user, type, groupId) => {
     const teamMemberQuery = {
       fullName: payload.fullName,
       userType: payload.userType,
-      defaultTeam: payload.defaultTeam,
+      defaultTeam: user.defaultTeam,
     };
 
     let existingUser = await User.findOne(teamMemberQuery).lean();
@@ -169,7 +169,7 @@ methods.getMembers = async (req) => {
   }
 };
 
-methods.changeStatus = async (body) => {
+methods.changeStatus = async (body, user) => {
   try {
     const lang = body.lang || "en";
     const ALLOWED_STATUS = ["blocked", "unblocked"];
@@ -182,9 +182,6 @@ methods.changeStatus = async (body) => {
       return errorStrings.STATUS_REQUIRED[lang];
     }
 
-    if (!body.group) {
-      return errorStrings.TEAM_REQUIRED_BEFORE_MEMBER[lang];
-    }
 
     if (!ALLOWED_STATUS.includes(body.status)) {
       return errorStrings.UNSUPPORTED_STATUS[lang];
@@ -192,7 +189,7 @@ methods.changeStatus = async (body) => {
 
     const teamMember = await User.findOne({
       _id: body.teamMember,
-      team: body.group,
+      defaultTeam: user.defaultTeam,
       userType: "team-member",
     });
 
@@ -226,6 +223,45 @@ methods.changeStatus = async (body) => {
     throw e;
   }
 };
+
+methods.editMember = async (body, user) => {
+  try {
+    const lang = body.lang || "en";
+    if (!body.teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_ID_REQUIRED[lang]);
+    }
+
+    const teamMemberId = body.teamMember;
+
+    // Find the team member
+    const teamMember = await User.findById(teamMemberId);
+    if (!teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
+    }
+    // check if the new user name is already exist
+    const existingTeamMember = await User.findOne({
+      fullName: body.fullName,
+      userType: "team-member",
+      defaultTeam: user.defaultTeam,
+    });
+
+    if (existingTeamMember){
+      throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
+    }
+
+    const update = {
+      fullName: body.fullName,
+      initials: body.initials,
+      color: body.color,
+    };
+  
+    // Update the user with new data
+    await User.findByIdAndUpdate(teamMemberId, { $set: update });
+  }
+  catch (e) {
+    throw e;
+  }
+}
 
 methods.delete = async (body, user) => {
   try {
@@ -265,9 +301,7 @@ methods.leaveTeam = async (body, user) => {
   }
 };
 
-methods.generateCode = () => {
-  return randomstring.generate(20);
-};
+methods.generateCode = () => { return randomstring.generate(20);};
 
 methods.reshuffleOrdersAfterUnblock = async (body, user) => {
   try {
@@ -312,10 +346,6 @@ methods.reshuffleOrdersAfterUnblock = async (body, user) => {
         }
       })
     );
-  } catch (e) {
-    console.log("HERE");
-    throw e;
-  }
-};
+  } catch (e) { console.log("HERE"); throw e;}};
 
 module.exports = methods;

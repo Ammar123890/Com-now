@@ -55,5 +55,11 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.patch("/group/edit", isDoctor, teamController.editTeam);
+  /**
+   * @api {DELETE} /user/team Delete team by id
+   * @apiName Delete team
+   * @apiGroup Team
+  **/
+  router.delete("/group/delete/:id", isDoctor, teamController.deleteTeam);
 
 };

@@ -174,16 +174,31 @@ methods.getTeamDetails = async (body, user) => {
   }
 };
 
-methods.deleteById = async (body) => {
+methods.deleteById = async (teamId, user) => {
   try {
-    const team = await Team.findOneAndDelete({
-      _id: body.team,
-    });
+    // Delete the team
+    const team = await Team.findByIdAndDelete(teamId);
+    if (!team) {
+      throw new Error('Team not found');
+    }
 
-    return team;
+    // Delete the team from the user's team array
+    await User.findByIdAndUpdate(
+      user._id,
+      { $pull: { team: team._id } }
+    );
+
+    // Remove the team from other team members
+    await User.updateMany(
+      { team: { $in: [team._id] }, userType: "team-member" },
+      { $pull: { team: team._id } }
+    );
+
+    return team._id;
   } catch (e) {
     throw e;
   }
 };
+
 
 module.exports = methods;
