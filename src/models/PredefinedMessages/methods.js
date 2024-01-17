@@ -9,17 +9,17 @@ const methods = {};
 methods.createMessage = async (body, user) => {
   const lang = body.lang || "en";
   try {
-    if (!user.team) {
+    if (!user.defaultTeam) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
     const payload = {
       text: body.text,
-      team: user.team,
+      team: user.defaultTeam,
     };
 
     const query = {
       text: { $regex: new RegExp(`^${body.text}$`), $options: "i" },
-      team: user.team,
+      team: user.defaultTeam,
     };
 
     const getPredefinedMessage = await PredefinedMessage.findOne(query).lean();
@@ -81,10 +81,11 @@ methods.editMessage = async (body, user) => {
   return predefinedMessage;
 };
 
-methods.getAllMessages = async (body, user) => {
+methods.getAllMessages = async (user) => {
   try {
+    console.log(user.defaultTeam)
     const query = {
-      team: user.team,
+      team: user.defaultTeam,
       isActive: true,
       isDeleted: false,
     };

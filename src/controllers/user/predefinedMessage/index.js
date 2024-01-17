@@ -16,7 +16,7 @@ controller.createMessage = async function (req, res, next) {
       req.user.subscription?.subscription?.maxTextTemplates || 0;
 
     const existingMessages = await PredefinedMessage.count({
-      team: req.user.team,
+      team: req.user.defaultTeam,
       isDeleted: false,
     });
 
@@ -79,7 +79,6 @@ controller.editMessage = async function (req, res, next) {
 controller.getMessage = async function (req, res, next) {
   try {
     const predefinedMessages = await predefinedMessageMethods.getAllMessages(
-      req.query,
       req.user
     );
 

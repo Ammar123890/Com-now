@@ -15,7 +15,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/register", userController.register);
-
   /**
    * @api {POST} /user/login Login user
    * @apiName Login User
@@ -30,7 +29,13 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/login", userController.login);
-
+  /**
+   * @api {PUT} /my-profile/edit Edit my profile
+   * @apiName Edit my profile
+   * @apiGroup User
+   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token
+   **/
+  router.put("/my-profile/edit", isUser, userController.editProfile);
   /**
    * @api {POST} /user/subscription Change subscription status
    * @apiName Change subscription status
@@ -44,7 +49,13 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/subscription", isUser, userController.changeSubscription);
-
+ /**
+  * @api {GET} /my-profile/get
+  * @apiName Get my profile
+  * @apiGroup User
+  * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token 
+  */
+  router.get("/my-profile/get", isUser, userController.getMyProfile);
   /**
    * @api {DELETE} /user Delete user account
    * @apiName Delete user account
@@ -58,7 +69,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.delete("/", isUser, userController.deleteUser);
-
   /**
    * @api {GET} /user/subscription Get all subscriptions
    * @apiName Get all subscriptions
@@ -72,7 +82,6 @@ module.exports = function (router) {
   router.get("/subscription", isUser, userController.getAllSubscription);
 
   router.put("/verify-email", userController.verifyEmail);
-
   /**
    * @api {PUT} /user/change-password Change password
    * @apiName Change password
@@ -87,7 +96,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.put("/change-password", isUser, userController.changePassword);
-
   /**
    * @api {PUT} /user/profile Edit profile
    * @apiName Edit profile
@@ -101,7 +109,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.put("/profile", isUser, userController.editProfile);
-
   /**
    * @api {POST} /user/password-recovery  Send password recovery email
    * @apiName Send Password Recovery Email
@@ -112,9 +119,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-
   router.post("/password-recovery", userController.passwordRecoveryEmail);
-
   /**
    * @api {POST} /user/verify-code Password recovery code verification
    * @apiName Password Recovery Code Verification
@@ -126,9 +131,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-
   router.post("/verify-code", userController.verifyPasswordRecoveryCode);
-
   /**
    * @api {POST} /user/reset-password Reset password after OTP verification
    * @apiName Reset password after OTP verification
@@ -140,9 +143,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-
   router.post("/reset-password", userController.resetPassword);
-
   /**
    * @api {POST} /user/logout Logout user
    * @apiName Logout user
@@ -154,7 +155,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/logout", isUser, userController.logout);
-
   /**
    * @api {POST} /user/fcm-token Save FCM Token
    * @apiName Save FCM Token
@@ -165,9 +165,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-
   router.post("/fcm-token", isUser, userController.saveFCMToken);
-
   /**
    * @api {PATCH} /user/order Change order of users
    * @apiName Change order of users

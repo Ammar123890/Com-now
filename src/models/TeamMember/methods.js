@@ -238,11 +238,12 @@ methods.editMember = async (body, user) => {
     if (!teamMember) {
       throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
     }
-    // check if the new user name is already exist
+    // check if the new user name is already exist apart from the current user
     const existingTeamMember = await User.findOne({
       fullName: body.fullName,
       userType: "team-member",
       defaultTeam: user.defaultTeam,
+      _id: { $ne: teamMemberId },
     });
 
     if (existingTeamMember){

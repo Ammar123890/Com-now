@@ -66,6 +66,20 @@ controller.login = async function (req, res, next) {
   }
 };
 
+controller.getMyProfile = async function (req, res, next) {
+  try {
+    const user = await User.findOne({ _id: req.user._id }).lean();
+
+    res.json({
+      data: { user: userMethods.getUserPublicProfile(user) },
+      success: true,
+      message: "User successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
+
 controller.verifyEmail = async function (req, res, next) {
   try {
     const { code, id } = req.query;
@@ -152,7 +166,12 @@ controller.editProfile = async function (req, res, next) {
   try {
     const payload = globalHelpers.removedUndefinedValues({
       fullName: req.body.fullName,
+      initials: req.body.initials,
+      color: req.body.color
+
     });
+
+
 
     const user = await User.findOneAndUpdate({ _id: req.user._id }, payload, {
       new: true,
