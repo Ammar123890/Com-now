@@ -37,7 +37,7 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.get("/group-member", isUser, teamController.getMembers);
+  router.get("/group-member/:group/:status/:lang", isUser, teamController.getMembers);
   /**
  * @api {POST} /user/grou-member/get-all-members Get all members
  * @apiName Get all members of all groups

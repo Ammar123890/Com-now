@@ -158,7 +158,7 @@ methods.resetPassword = async function (body) {
   }
 };
 
-methods.getUserPublicProfile = function (user) {
+methods.getUserPublicProfile = function (user, lang) {
   if (user.toJSON) {
     user = user.toJSON();
   }
@@ -169,7 +169,7 @@ methods.getUserPublicProfile = function (user) {
 
   if (user?.subscription?.subscription?.perks) {
     user.subscription.subscription.perks =
-      user.subscription.subscription.perks["en"];
+      user.subscription.subscription.perks[lang];
   }
 
   delete user.password;

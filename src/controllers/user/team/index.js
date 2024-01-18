@@ -41,7 +41,7 @@ controller.getAllTeams = async function (req, res, next) {
 
   try {
     const teams = await teamMethods.getAllTeams(
-      { lang: req.query.lang },
+      { lang: req.params.lang },
       req.user
     );
 
@@ -58,8 +58,9 @@ controller.getAllTeams = async function (req, res, next) {
 
 controller.getTeamById = async function (req, res, next) {
   try {
+    console.log("pppp"+req.query.id);
     const team = await teamMethods.getTeamById(
-      { id: req.params.id, lang: req.body.lang },
+      { id: req.params.id, lang: req.params.lang },
       req.user
     );
 
@@ -75,10 +76,10 @@ controller.getTeamById = async function (req, res, next) {
 
 controller.getOnlineUsers = async function (req, res, next) {
 
-  console.log(req.query.lang);
+  console.log(req.params.lang);
   try {
     const onlineUsers = await teamMethods.getOnlineUsers(
-      { team: req.params.id, lang: req.query.lang },
+      { team: req.params.id, lang: req.params.lang },
       req.user
     );
 

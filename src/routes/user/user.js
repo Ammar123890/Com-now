@@ -55,7 +55,7 @@ module.exports = function (router) {
   * @apiGroup User
   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token 
   */
-  router.get("/my-profile/get", isUser, userController.getMyProfile);
+  router.get("/my-profile/get/:lang", isUser, userController.getMyProfile);
   /**
    * @api {DELETE} /user Delete user account
    * @apiName Delete user account

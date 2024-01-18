@@ -71,7 +71,7 @@ controller.getMyProfile = async function (req, res, next) {
     const user = await User.findOne({ _id: req.user._id }).lean();
 
     res.json({
-      data: { user: userMethods.getUserPublicProfile(user) },
+      data: { user: userMethods.getUserPublicProfile(user,req.params.lang) },
       success: true,
       message: "User successful",
     });
