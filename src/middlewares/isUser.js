@@ -87,4 +87,61 @@ const isUser = async (req, _res, next) => {
   }
 };
 
-module.exports = { isUser, isTokenValid };
+const isMemberTokenValid = async (authorization, req) => {
+  try {
+    const lang = (req?.body?.lang ? req?.body?.lang : req?.query?.lang) || "en";
+    if (!authorization) {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);
+    }
+
+    const token = authorization.split(" ")[1];
+    console.log("token", token);
+
+    if (!token) {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);
+    }
+
+    jwt.verify(token, keys.JWT_SECRET);
+
+    const authToken = await AuthorizationToken.findOne({
+      token,
+    })
+      .lean()
+      .select("user")
+      .populate("user");
+
+    if (!authToken) {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);
+    }
+
+    if (!authToken.user) {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);
+    }
+
+    return authToken;
+  } catch (e) {
+    throw e;
+  }
+}
+
+const isTeamMember = async (req, _res, next) => {
+  try {
+    const authToken = await isMemberTokenValid(req.headers.authorization, req);
+
+    const user = authToken.user;
+
+    if (user.userType !== "team-member") {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[user.lang]);
+    }
+
+    req.user = user;
+
+    next();
+  } catch (e) {
+    const error = { message: e.message };
+
+    next({ message: error, status: 401 });
+  }
+}
+
+module.exports = { isUser, isTeamMember, isTokenValid };
