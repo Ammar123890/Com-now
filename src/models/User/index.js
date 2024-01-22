@@ -96,6 +96,14 @@ const schema = new mongoose.Schema(
       select: false,
       default: null,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
     lastCall: {
       type: lastCall,
       select: false,

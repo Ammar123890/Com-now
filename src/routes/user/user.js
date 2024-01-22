@@ -83,6 +83,8 @@ module.exports = function (router) {
   router.get("/subscription", isUser, userController.getAllSubscription);
 
   router.put("/verify-email", userController.verifyEmail);
+
+  router.put("/verify-email-link", userController.verifyEmailLink);
   /**
    * @api {PUT} /user/change-password Change password
    * @apiName Change password

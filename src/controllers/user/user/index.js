@@ -17,8 +17,8 @@ const controller = {};
 
 controller.register = async function (req, res, next) {
   try {
+    console.log("here");
     const registerResponse = await userMethods.register(req.body);
-    
     //create a team of the user
     const team = await createDefaultTeam.createDefaultTeam(registerResponse.user);
 
@@ -26,10 +26,9 @@ controller.register = async function (req, res, next) {
     res.json({
       data: {
         user: userMethods.getUserPublicProfile(registerResponse.user),
-        token: registerResponse.token,
       },
       success: true,
-      message: "Registeration is successful",
+      message: "Registeration is successful, Check your email for verification code",
     });
   } catch (e) {
     next({ message: e, status: 400 });
@@ -126,6 +125,21 @@ controller.verifyEmail = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
+controller.verifyEmailLink = async function (req, res, next) {
+  const { token } = req.query;
+  const user = await User.findOne({ emailVerificationToken: token });
+
+  if (!user) {
+    return res.status(400).send('Invalid or expired verification link.');
+  }
+
+  user.isVerified = true;
+  user.emailVerificationToken = null; // Clear the token
+  await user.save();
+
+  res.send('Email successfully verified.');
+}
 
 controller.changePassword = async function (req, res, next) {
   try {

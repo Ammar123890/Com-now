@@ -14,6 +14,7 @@ const constants = require("../../config/constants");
 const teamMethods = require("../Team/methods");
 const predefinedMessagesMethods = require("../PredefinedMessages/methods");
 const logger = require("../../utils/logger");
+//const user = require("../../routes/user/user");
 
 const methods = {};
 
@@ -56,6 +57,30 @@ methods.sendVerificationEmail = async function (body) {
     throw e;
   }
 };
+
+methods.sendEmailVerificationLink = async function (user) {
+  const verificationToken = globalHelpers.generateRandomString(32);
+  const verificationLink = `${keys.BASE_URL}/user/verify-email-link?token=${verificationToken}`;
+
+  user.verificationToken = verificationToken;
+  await user.save();
+
+  const template = await loadTemplateAndSend("VerifyEmail", {
+    fullName: user.fullName,
+    link: verificationLink,
+  });
+
+  const mailPayload = {
+    to: user.email,
+    html: template.htmlContent,
+    text: template.txtContent,
+    subject: template.subject,
+    from: keys.ADMIN_EMAIL,
+  };
+
+  await sendGrid.sendMail(mailPayload);
+
+}
 
 methods.verifyOTP = async function (body) {
   try {
@@ -371,10 +396,10 @@ methods.login = async (body) => {
       throw new Error(errorStrings.EMAIL_PASSWORD_NOT_CORRECT[lang]);
     }
 
-    // if (!user.emailVerified) {
-    //   await methods.sendVerificationEmail({ email: user.email, lang });
-    //   throw new Error(errorStrings.EMAIL_NOT_VERIFIED[lang]);
-    // }
+    if (!user.isVerified) {
+      await methods.sendVerificationEmail({ email: user.email, lang });
+      throw new Error(errorStrings.EMAIL_NOT_VERIFIED[lang]);
+    }
 
     const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET);
     const tokenPayload = {
@@ -403,6 +428,7 @@ methods.login = async (body) => {
 
 methods.register = async (body) => {
   try {
+    console.log("here 2");
     const lang = body.lang || "en";
     if (!body.fullName) {
       return errorStrings.FULL_NAME_REQUIRED[lang];
@@ -435,6 +461,7 @@ methods.register = async (body) => {
       fullName: body.fullName,
       userName: body.userName,
       provider: ["password"],
+      isVerified: false
     
     };
 
@@ -444,22 +471,23 @@ methods.register = async (body) => {
     const user = new User(payload);
 
     await user.save();
+    await methods.sendEmailVerificationLink(user);
    // await methods.sendVerificationEmail({ email: user.email });
-    const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    // const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
+    //   expiresIn: "1h",
+    // });
 
-    const tokenPayload = {
-      user: user._id,
-      token,
-      type: "user",
-    };
+    // const tokenPayload = {
+    //   user: user._id,
+    //   token,
+    //   type: "user",
+    // };
 
-    const saveToken = new AuthorizationToken(tokenPayload);
+    // const saveToken = new AuthorizationToken(tokenPayload);
 
-    await saveToken.save();
+    // await saveToken.save();
 
-    return { user, token };
+    return { user};
   } catch (e) {
     throw e;
   }

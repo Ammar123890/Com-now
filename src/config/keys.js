@@ -6,8 +6,8 @@ const keys = {
   MONGO_URI: "mongodb+srv://comnow:comnow@cluster0.phnqfxj.mongodb.net/",
  // MONGO_URI: "mongodb+srv://blockchain:blockchain@cluster0.fcgihto.mongodb.net/",
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
-  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,         
-  BASE_URL: "http://localhost:3000/api",
+  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY_CREATEEX,    
+  BASE_URL: "https://com-now-10196bc087d0.herokuapp.com",
 };
 
 if (process.env.NODE_ENV === "production") {
