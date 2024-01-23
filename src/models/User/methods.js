@@ -461,7 +461,8 @@ methods.register = async (body) => {
       fullName: body.fullName,
       userName: body.userName,
       provider: ["password"],
-      isVerified: false
+   //  isVerified: false
+      isVerified: true
     
     };
 
@@ -471,7 +472,7 @@ methods.register = async (body) => {
     const user = new User(payload);
 
     await user.save();
-    await methods.sendEmailVerificationLink(user);
+  //  await methods.sendEmailVerificationLink(user);
    // await methods.sendVerificationEmail({ email: user.email });
     // const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
     //   expiresIn: "1h",

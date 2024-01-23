@@ -96,4 +96,6 @@ module.exports = function (router) {
   **/
   router.patch("/group-member/edit", isDoctor, teamController.editMember);
 
+  router.patch("/group-member/logout", isTeamMember, teamController.logoutMember);
+
 };

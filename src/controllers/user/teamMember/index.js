@@ -124,4 +124,17 @@ controller.deleteMember = async function (req, res, next) {
   }
 };
 
+controller.logoutMember = async function (req, res, next) {
+  try {
+     await teamMemberMethods.logoutMember(req);
+
+    res.json({
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
+
 module.exports = controller;

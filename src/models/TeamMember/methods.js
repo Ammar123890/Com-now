@@ -4,6 +4,7 @@ const _ = require("lodash");
 const errorStrings = require("../../config/errorStrings");
 const User = require("../User");
 const UserOrder = require("../UserOrder");
+const AuthorizationToken = require("../../models/AuthorizationToken");
 const team = require("../../routes/user/team");
 
 const methods = {};
@@ -46,7 +47,7 @@ methods.addMember = async (body, user, type, groupId) => {
 
       // If adding to a specific group, add them to that group
       if (type === 'group') {
-        await User.findByIdAndUpdate(existingUser._id, { $set: { team: [groupId] } });
+        await User.findByIdAndUpdate(existingUser._id, { $set: { team: [groupId],leavedGroup: false } });
         return existingUser;
       }
       throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
@@ -57,7 +58,7 @@ methods.addMember = async (body, user, type, groupId) => {
 
       // If adding to a specific group, add them to that group
       if (type === 'group') {
-        await User.findByIdAndUpdate(newUser._id, { $set: { team: [groupId] } });
+        await User.findByIdAndUpdate(newUser._id, { $set: { team: [groupId], leavedGroup: false } });
       }
       return newUser;
     }
@@ -66,7 +67,7 @@ methods.addMember = async (body, user, type, groupId) => {
   }
 };
 
-methods.reAddMember = async (body, user) => {  
+methods.reAddMember = async (body, user) => {
   try {
     const lang = body.lang || "en";
     if (!body.teamMember) {
@@ -87,7 +88,7 @@ methods.reAddMember = async (body, user) => {
     const newCode = methods.generateCode();
 
     // Update the user with new code and leavedTeam = false if the body contains type = team and leavedGroup = false if the body contains type = group
-    const update = (body.type === "group") ? { "enrollmentCode.code": newCode, "leavedGroup":false } : { "enrollmentCode.code": newCode, "leavedTeam":false };
+    const update = (body.type === "group") ? { "enrollmentCode.code": newCode, "leavedGroup": false } : { "enrollmentCode.code": newCode, "leavedTeam": false };
     await User.findByIdAndUpdate(teamMemberId, { $set: update });
 
     //return the user with new code
@@ -246,7 +247,7 @@ methods.editMember = async (body, user) => {
       _id: { $ne: teamMemberId },
     });
 
-    if (existingTeamMember){
+    if (existingTeamMember) {
       throw new Error(errorStrings.TEAM_MEMBER_ALREADY_EXIST_WITH_NAME[lang]);
     }
 
@@ -255,7 +256,7 @@ methods.editMember = async (body, user) => {
       initials: body.initials,
       color: body.color,
     };
-  
+
     // Update the user with new data
     await User.findByIdAndUpdate(teamMemberId, { $set: update });
   }
@@ -274,7 +275,7 @@ methods.delete = async (body, user) => {
     // Find the team member and delete
     await User.findByIdAndDelete(teamMemberId);
   } catch (e) {
-    throw e; 
+    throw e;
   }
 };
 
@@ -302,7 +303,31 @@ methods.leaveTeam = async (body, user) => {
   }
 };
 
-methods.generateCode = () => { return randomstring.generate(20);};
+methods.logoutMember = async (req) => {
+  try {
+    const lang = req.params.lang || "en";
+    // delete the token
+    const token = req.headers.authorization.split(" ")[1];
+    const tokenMem = await AuthorizationToken.findOne({ token })
+      .lean()
+      .select("_id");
+
+    if (!tokenMem) {
+      throw new Error(errorStrings.AUTHORIZATION_DENIED[lang]);
+    }
+    await AuthorizationToken.findByIdAndRemove(tokenMem._id)
+      .lean()
+      .select("_id");
+    // update the fcmToken to null, leaved group to true and leaved team to true and enrollment code to null
+    await User.findByIdAndUpdate(req.user._id, { $set: { fcmToken: null, leavedGroup: true, leavedTeam: true, enrollmentCode: null } });
+    return true;
+  }
+  catch (e) {
+    throw e;
+  }
+}
+
+methods.generateCode = () => { return randomstring.generate(20); };
 
 methods.reshuffleOrdersAfterUnblock = async (body, user) => {
   try {
@@ -347,6 +372,7 @@ methods.reshuffleOrdersAfterUnblock = async (body, user) => {
         }
       })
     );
-  } catch (e) { console.log("HERE"); throw e;}};
+  } catch (e) { console.log("HERE"); throw e; }
+};
 
 module.exports = methods;
