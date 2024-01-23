@@ -89,6 +89,8 @@ module.exports = function (router) {
    * @apiGroup Team Member
    **/
   router.patch("/group-member/readd", isDoctor, teamController.reAddMember);
+
+  router.patch("/group-member/re-add",isDoctor, teamController.reAddMemberNew);
   /**
    * @api {PATCH} /user/team-member/edit Edit team member
    * @apiName Edit team member

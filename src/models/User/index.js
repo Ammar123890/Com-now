@@ -113,6 +113,11 @@ const schema = new mongoose.Schema(
       required: [true, "User type is required"],
       enums: ["doctor", "team-member"],
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      default: null,
+    },
     fcmToken: {
       type: String,
     },

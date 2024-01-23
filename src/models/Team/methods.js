@@ -16,8 +16,11 @@ methods.createTeam = async (body, user) => {
       throw new Error(errorStrings.TEAM_SAME_NAME[lang]);
     }
 
+    // get the users total number of teams
+    const userTeams = await Team.countDocuments({ user: user._id });
+
     // Create a new team
-    const team = new Team({ user: user._id, name: teamName });
+    const team = new Team({ user: user._id, name: teamName, rank: userTeams-1});
     await team.save();
 
     // Update User: Set 'defaultTeam' if teamName is 'allTeamMember', else push to 'team' array
@@ -43,8 +46,17 @@ methods.createTeam = async (body, user) => {
 
 methods.getAllTeams = async (body, user) => {
   const lang = body.lang || "en";
+  const type = body.type || "asc"; // Default to "asc" if type is not provided
+
   try {
-    // Return teams where the name is not "allTeamMember"  and also the  total number of members in each team
+    let sortCriteria = {};
+    if (type === "asc") {
+      sortCriteria = { createdAt: 1 }; // Sort by creation time in ascending order
+    } else if (type === "des") {
+      sortCriteria = { createdAt: -1 }; // Sort by creation time in descending order
+    } else if (type === "custom") {
+      sortCriteria = { rank: 1 }; // Sort by rank in ascending order
+    }
 
     const teams = await Team.aggregate([
       {
@@ -64,11 +76,14 @@ methods.getAllTeams = async (body, user) => {
       {
         $project: {
           name: 1,
+          rank: 1,
+          createdAt: 1, // Include the createdAt field
           users: {
-            $subtract: [{ $size: "$users" }, 1]  // Subtract 1 from the size of the users array
+            $subtract: [{ $size: "$users" }, 1]
           },
         },
       },
+      { $sort: sortCriteria }, // Add the sorting stage
     ]);
 
     if (!teams || teams.length === 0) {
@@ -79,7 +94,7 @@ methods.getAllTeams = async (body, user) => {
   } catch (e) {
     throw e;
   }
-}
+};
 
 methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";
@@ -199,6 +214,38 @@ methods.deleteById = async (teamId, user) => {
     throw e;
   }
 };
+
+methods.reorderTeam = async (body, user) => {
+  // it takes an array of team ids and the ranks of the teams from 0 onwards
+
+  try {
+    const lang = body.lang || "en";
+    const teams = body.teams;
+
+    // Check if the user has all the teams apart from the default team which name is 'allTeamMember'
+    const userTeams = await Team.find({ user: user._id, name: { $ne: "allTeamMember" } }).lean();
+
+
+  //  const userTeams = await Team.find({ user: user._id }).lean();
+
+    const userTeamIds = userTeams.map(team => team._id.toString());
+    const teamIds = teams.map(team => team.id);
+
+    if (teamIds.length !== userTeamIds.length || !teamIds.every(id => userTeamIds.includes(id))) {
+      throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
+    }
+
+    // Update the ranks of the teams
+    for (let i = 0; i < teams.length; i++) {
+      const team = teams[i];
+      await Team.findByIdAndUpdate(team.id, { rank: team.rank });
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
 
 
 module.exports = methods;

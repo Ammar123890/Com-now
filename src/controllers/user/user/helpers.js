@@ -51,9 +51,14 @@ helpers.sendMessageValidation = (body) => {
 helpers.setUserOrderValidation = (body) => {
   const orders = body.orders || [];
   const lang = body.lang || "en";
+  const team = body.team || null;
 
   if (orders.length <= 0) {
     return errorStrings.ORDERS_ARRAY_EMPTY[lang];
+  }
+
+  if (!team) {
+    return errorStrings.TEAM_ID_REQUIRED[lang];
   }
 
   for (let i = 0; i < orders.length; i++) {

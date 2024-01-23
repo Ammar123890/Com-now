@@ -11,8 +11,9 @@ controller.addMember = async function (req, res, next) {
     const { lang = "en", type, group } = req.body;
     const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
     const teamId = type === 'group' ? group : req.user.defaultTeam;
+
     const existingUsers = await User.count({
-      team: { $in: [req.user.defaultTeam] },
+      team: { $in: [teamId] },
       userType: "team-member",
     });
 
@@ -21,6 +22,23 @@ controller.addMember = async function (req, res, next) {
     }
 
     const user = await teamMemberMethods.addMember(req.body, req.user, type, group);
+
+    // Update the UserOrder for the team
+    let userOrder = await UserOrder.findOne({ team: teamId });
+
+    if (!userOrder) {
+      // Create a new UserOrder if it doesn't exist
+      userOrder = new UserOrder({ team: teamId, order: [] });
+    }
+
+    const maxRank = userOrder.order.length > 0 ? userOrder.order[userOrder.order.length - 1].rank : 0;
+
+    userOrder.order.push({
+      user: user._id,
+      rank: maxRank + 1,
+    });
+
+    await userOrder.save();
 
     res.json({
       data: { user },
@@ -36,6 +54,21 @@ controller.reAddMember = async function (req, res, next) {
   try {
 
     const user = await teamMemberMethods.reAddMember(req.body, req.user);
+
+    res.json({
+      data: { user },
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
+
+controller.reAddMemberNew = async function (req, res, next) {
+  try {
+
+    const user = await teamMemberMethods.reAddMemberNew(req.body);
 
     res.json({
       data: { user },

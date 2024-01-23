@@ -62,4 +62,6 @@ module.exports = function (router) {
   **/
   router.delete("/group/delete/:id", isDoctor, teamController.deleteTeam);
 
+  router.patch("/group/reorder", isDoctor, teamController.reorderTeam);
+
 };

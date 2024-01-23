@@ -1,5 +1,6 @@
 const teamMethods = require("../../../models/Team/methods");
 const helpers = require("./helpers");
+const userOrderModel = require("../../../models/UserOrder/index");
 
 const controller = {};
 
@@ -12,6 +13,12 @@ controller.createNewTeam = async function (req, res, next) {
       { name: req.body.name, lang: req.body.lang },
       req.user,
     );
+
+    // create the user order for the team
+    const userOrder = await userOrderModel.create({
+      team: team._id,
+    });
+    await 
 
     res.json({
       data: { team },
@@ -41,7 +48,7 @@ controller.getAllTeams = async function (req, res, next) {
 
   try {
     const teams = await teamMethods.getAllTeams(
-      { lang: req.params.lang },
+      { lang: req.params.lang, type: req.query.type },
       req.user
     );
 
@@ -110,6 +117,18 @@ controller.editTeam = async function (req, res, next) {
 controller.deleteTeam = async function (req, res, next) {
   try {
     await teamMethods.deleteById(req.params.id, req.user);
+    res.json({
+      success: true,
+      message: "Successful",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+};
+
+controller.reorderTeam = async function (req, res, next) {
+  try {
+    await teamMethods.reorderTeam(req.body, req.user);
     res.json({
       success: true,
       message: "Successful",

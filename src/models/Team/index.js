@@ -17,7 +17,11 @@ const schema = new mongoose.Schema(
     team:{
       type: Boolean,
       default: false,
-    }
+    },
+    rank:{
+      type: Number,
+      default: null,
+    },
   },
   {
     timestamps: true,

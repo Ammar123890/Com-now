@@ -411,7 +411,7 @@ controller.setUserOrder = async function (req, res, next) {
       req.body.orders.map(async (item) => {
         const user = await User.findOne({
           _id: item.user,
-          team: req.user.team,
+          team: req.body.team,
         });
 
         if (!user) {
@@ -423,7 +423,7 @@ controller.setUserOrder = async function (req, res, next) {
     );
 
     await UserOrder.updateOne(
-      { user: req.user._id },
+      { team: req.body.team },
       {
         user: req.user._id,
         orders: req.body.orders,

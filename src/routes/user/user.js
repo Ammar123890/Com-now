@@ -183,5 +183,5 @@ module.exports = function (router) {
    * @apiError message contains the error message. will be an array if the error is more than one, for example validation failed
    * @apiError success contains "false"
    */
-  router.patch("/order", isUser, userController.setUserOrder);
+  router.patch("/members/order", isUser, userController.setUserOrder);
 };

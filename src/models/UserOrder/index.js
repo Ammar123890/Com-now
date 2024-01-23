@@ -3,11 +3,11 @@ const uniqueValidator = require("mongoose-unique-validator");
 
 const schema = new mongoose.Schema(
   {
-    user: {
+    team: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "team",
     },
-    orders: [
+    order: [
       {
         rank: {
           type: Number,
@@ -23,6 +23,9 @@ const schema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Set the default value for the 'order' array
+schema.path('order').default([]);
 
 schema.plugin(uniqueValidator, { message: "{PATH} already exist." });
 

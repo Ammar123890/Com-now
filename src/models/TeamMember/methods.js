@@ -27,6 +27,7 @@ methods.addMember = async (body, user, type, groupId) => {
         expiry: null,
       },
       color: body.color,
+      createdBy: user._id,
       ...body.otherFields
     };
 
@@ -100,71 +101,89 @@ methods.reAddMember = async (body, user) => {
 
 }
 
+methods.reAddMemberNew = async (body) => {
+  try {
+    const lang = body.lang || "en";
+    if (!body.teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_ID_REQUIRED[lang]);
+    }
+
+    const teamMemberId = body.teamMember;
+
+    // Find the team member
+    const teamMember = await User.findById(teamMemberId);
+    if (!teamMember) {
+      throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);
+    }
+
+    // Generate a new code and update the user
+    const newCode = methods.generateCode();
+
+    // Update the user with new enrollmentCode and leavedTeam = false if the body contains type = team and leavedGroup = false if the body contains type = group
+    const update = {
+      enrollmentCode: { code: newCode, expiry: null},
+      leavedGroup: false,
+      leavedTeam: false
+    };
+    await User.findByIdAndUpdate(teamMemberId, { $set: update });
+
+    //return the user with new code
+    return await User.findById(teamMemberId);
+  }
+  catch (e) {
+    throw e;
+  }
+};
+
 methods.getMembers = async (req) => {
   try {
     const lang = req.params.lang || "en";
-    const ALLOWED_STATUS = ["blocked", "unblocked", "all"];
+    const sortOption = req.query.sort || "asc"; // Default to "asc" if sort option is not provided
+    const ALLOWED_SORT_OPTIONS = ["asc", "des", "custom"];
 
-    if (req.params.status && !ALLOWED_STATUS.includes(req.params.status)) {
-      return errorStrings.UNSUPPORTED_STATUS[lang];
+    if (!ALLOWED_SORT_OPTIONS.includes(sortOption)) {
+      return errorStrings.UNSUPPORTED_SORT_OPTION[lang];
     }
 
-    // Determine the field to search (team or defaultTeam) based on provided group ID
-    const isDefaultTeam = !req.params.group || req.params.group === req.user.defaultTeam.toString();
-    const teamField = isDefaultTeam ? 'defaultTeam' : 'team';
-
-    let orders = await UserOrder.findOne({ user: req.user._id });
-    if (!orders) {
-      orders = {
-        orders: [],
-      };
-    }
-
-    const rankMap = orders.orders.reduce((acc, item) => {
-      acc[item.user] = item.rank;
-      return acc;
-    }, {});
-
+    const teamId = req.params.group || req.user.defaultTeam;
     const query = {
-      [teamField]: isDefaultTeam ? req.user.defaultTeam : req.params.group,
+      team: teamId,
       userType: "team-member",
     };
 
     if (req.params.status === "blocked") {
       query.blocked = true;
-    }
-
-    if (req.params.status === "unblocked") {
+    } else if (req.params.status === "unblocked") {
       query.blocked = false;
     }
 
     let teamMembers = await User.find(query).lean();
 
-    teamMembers = teamMembers.map((item) => {
-      if (item._id in rankMap) {
-        item.rank = rankMap[item._id];
+    if (sortOption === "asc" || sortOption === "des") {
+      const sortDirection = sortOption === "asc" ? 1 : -1;
+      teamMembers = teamMembers.sort((a, b) => (a.createdAt - b.createdAt) * sortDirection);
+    } else if (sortOption === "custom") {
+      // Get user order for the team
+      let userOrder = await UserOrder.findOne({ team: teamId });
+      if (!userOrder) {
+        return []; // Return empty array if no user order is found
       }
+      const userIdsInOrder = userOrder.order.map(o => o.user);
 
-      return item;
-    });
-    teamMembers = _.orderBy(teamMembers, ["rank"]);
-    const { newData } = teamMembers.reduce(
-      (acc, item) => {
-        if (typeof item.rank === "number") {
-          acc.maxRank = item.rank;
-        } else {
-          item.rank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
-          acc.maxRank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
+      // Sort team members according to the order in UserOrder
+      teamMembers.sort((a, b) => userIdsInOrder.indexOf(a._id) - userIdsInOrder.indexOf(b._id));
+
+      // Include the rank data
+      teamMembers = teamMembers.map(member => {
+        const orderEntry = userOrder.order.find(o => o.user.equals(member._id));
+        if (orderEntry) {
+          member.rank = orderEntry.rank;
         }
+        return member;
+      });
+    }
 
-        acc.newData.push(item);
-
-        return acc;
-      },
-      { maxRank: -Infinity, newData: [] }
-    );
-
-    return newData;
+    return teamMembers;
   } catch (e) {
     throw e;
   }
