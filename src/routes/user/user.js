@@ -1,7 +1,10 @@
 const userController = require("../../controllers/user/user");
 const { isUser, isTeamMember } = require("../../middlewares/isUser");
 
+
+
 module.exports = function (router) {
+
   /**
    * @api {POST} /user/register Register user
    * @apiName Register User

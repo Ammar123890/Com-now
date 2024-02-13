@@ -31,6 +31,7 @@ const globalHelpers = require("./src/utils/globalHelpers");
 // Middlewares
 app.use(express.json());
 app.use(express.static("doc"));
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 require("./src/routes")(app);
