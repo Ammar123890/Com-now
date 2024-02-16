@@ -158,6 +158,7 @@ methods.getMembers = async (req) => {
     }
 
     let teamMembers = await User.find(query).lean();
+    console.log("teamMembers", teamMembers);
 
     if (sortOption === "asc" || sortOption === "des") {
       const sortDirection = sortOption === "asc" ? 1 : -1;
