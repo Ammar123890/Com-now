@@ -145,11 +145,25 @@ methods.getMembers = async (req) => {
       return errorStrings.UNSUPPORTED_SORT_OPTION[lang];
     }
 
-    const teamId = req.params.group || req.user.defaultTeam;
-    const query = {
-      team: teamId,
-      userType: "team-member",
-    };
+    const teamId = req.params.group;
+    let query = {};
+    if(teamId == req.user.defaultTeam){
+       query = {
+        defaultTeam: teamId,
+        userType: "team-member",
+      };
+    }
+    else{
+      query = {
+        team: teamId,
+        userType: "team-member",
+      };
+    }
+
+    // const query = {
+    //   team: teamId,
+    //   userType: "team-member",
+    // };
 
     if (req.params.status === "blocked") {
       query.blocked = true;
@@ -158,14 +172,18 @@ methods.getMembers = async (req) => {
     }
 
     let teamMembers = await User.find(query).lean();
-    console.log("teamMembers", teamMembers);
 
     if (sortOption === "asc" || sortOption === "des") {
       const sortDirection = sortOption === "asc" ? 1 : -1;
       teamMembers = teamMembers.sort((a, b) => (a.createdAt - b.createdAt) * sortDirection);
     } else if (sortOption === "custom") {
       // Get user order for the team
-      let userOrder = await UserOrder.findOne({ team: teamId });
+
+      let userOrder;
+      if(teamId == req.user.defaultTeam)
+        userOrder = await UserOrder.findOne({ defaultTeam: teamId });
+      else
+        userOrder = await UserOrder.findOne({ team: teamId });
       if (!userOrder) {
         return []; // Return empty array if no user order is found
       }
@@ -174,7 +192,7 @@ methods.getMembers = async (req) => {
       // Sort team members according to the order in UserOrder
       teamMembers.sort((a, b) => userIdsInOrder.indexOf(a._id) - userIdsInOrder.indexOf(b._id));
 
-      // Include the rank data
+      // Include the rank dataz
       teamMembers = teamMembers.map(member => {
         const orderEntry = userOrder.order.find(o => o.user.equals(member._id));
         if (orderEntry) {
