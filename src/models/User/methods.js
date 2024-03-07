@@ -29,9 +29,11 @@ methods.sendVerificationEmail = async function (body) {
 
     const code = globalHelpers.generateRandomString(6, "numeric");
 
+    const link=`${keys.BASE_URL}/api/user/verify-email?id=${user._id}&code=${code}`;
+    console.log(link);
     const template = await loadTemplateAndSend("VerifyEmail", {
       fullName: user.fullName,
-      link: `${keys.BASE_URL}/user/verify-email?id=${user._id}&code=${code}`,
+      link: `${keys.BASE_URL}/api/user/verify-email?id=${user._id}&code=${code}`,
     });
 
     const mailPayload = {
@@ -41,7 +43,6 @@ methods.sendVerificationEmail = async function (body) {
       subject: template.subject,
       from: keys.ADMIN_EMAIL,
     };
-
     await sendGrid.sendMail(mailPayload);
 
     user.otp = {
@@ -428,7 +429,7 @@ methods.login = async (body) => {
 
 methods.register = async (body) => {
   try {
-    console.log("here 2");
+  //  console.log("here 2");
     const lang = body.lang || "en";
     if (!body.fullName) {
       return errorStrings.FULL_NAME_REQUIRED[lang];
@@ -461,8 +462,8 @@ methods.register = async (body) => {
       fullName: body.fullName,
       userName: body.userName,
       provider: ["password"],
-   //  isVerified: false
-      isVerified: true
+     isVerified: false
+   //   isVerified: true
     
     };
 
@@ -472,21 +473,21 @@ methods.register = async (body) => {
     const user = new User(payload);
 
     await user.save();
-  //  await methods.sendEmailVerificationLink(user);
-   // await methods.sendVerificationEmail({ email: user.email });
-    // const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
-    //   expiresIn: "1h",
-    // });
+  // await methods.sendEmailVerificationLink(user);
+   await methods.sendVerificationEmail({ email: user.email });
+    const token = jwt.sign({ _id: user._id, type: "user" }, keys.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    // const tokenPayload = {
-    //   user: user._id,
-    //   token,
-    //   type: "user",
-    // };
+    const tokenPayload = {
+      user: user._id,
+      token,
+      type: "user",
+    };
 
-    // const saveToken = new AuthorizationToken(tokenPayload);
+    const saveToken = new AuthorizationToken(tokenPayload);
 
-    // await saveToken.save();
+    await saveToken.save();
 
     return { user};
   } catch (e) {

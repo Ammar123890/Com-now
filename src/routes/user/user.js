@@ -59,6 +59,7 @@ module.exports = function (router) {
   * @apiHeader {String} Authorization token should be sent. In the followng pattern Bearer {Token} replace by real token 
   */
   router.get("/my-profile/get/:lang", isUser, userController.getMyProfile);
+  
   router.get("/member/my-profile/get/:lang", isTeamMember, userController.getMyProfile);
   /**
    * @api {DELETE} /user Delete user account

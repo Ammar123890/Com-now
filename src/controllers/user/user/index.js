@@ -17,7 +17,6 @@ const controller = {};
 
 controller.register = async function (req, res, next) {
   try {
-    console.log("here");
     const registerResponse = await userMethods.register(req.body);
     //create a team of the user
     const team = await createDefaultTeam.createDefaultTeam(registerResponse.user);
@@ -82,10 +81,7 @@ controller.getMyProfile = async function (req, res, next) {
 controller.verifyEmail = async function (req, res, next) {
   try {
     const { code, id } = req.query;
-    console.log(code, id)
-
     const isValid = await userMethods.verifyOTP({ user: id, otp: code });
-
     if (!isValid) {
       const url = path.resolve(
         path.join(
@@ -103,11 +99,15 @@ controller.verifyEmail = async function (req, res, next) {
       return;
     }
 
-    await User.findOneAndUpdate(
+    try{
+      await User.findOneAndUpdate(
       { _id: id },
-      { otp: null, emailVerified: true }
+      { otp: null, isVerified: true }
     ).lean();
 
+    }catch(e){
+      console.log(e)
+    }
     const url = path.resolve(
       path.join(
         __dirname,
