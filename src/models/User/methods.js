@@ -61,7 +61,8 @@ methods.sendVerificationEmail = async function (body) {
 
 methods.sendEmailVerificationLink = async function (user) {
   const verificationToken = globalHelpers.generateRandomString(32);
-  const verificationLink = `${keys.BASE_URL}/user/verify-email-link?token=${verificationToken}`;
+  const verificationLink = `${keys.BASE_URL}/api/user/verify-email-link?token=${verificationToken}`;
+ // const verificationLink = `${keys.BASE_URL}/user/verify-email-link?token=${verificationToken}`;
 
   user.verificationToken = verificationToken;
   await user.save();
