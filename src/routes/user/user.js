@@ -188,4 +188,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.patch("/members/order", isUser, userController.setUserOrder);
+  
+  router.get('/members/order/get', isUser, userController.getUserOrder);
 };

@@ -477,4 +477,11 @@ module.exports = {
     fr: "Un ou plusieurs utilisateurs n'existent pas",
     it: "Uno o più utenti non esistono",
   },
+  USER_ORDER_NOT_FOUND:{
+    en: "User order not found",
+    de: "Benutzerreihenfolge nicht gefunden",
+    es: "Orden de usuario no encontrado",
+    fr: "Ordre de l'utilisateur non trouvé",
+    it: "Ordine dell'utente non trovato",
+  },
 };

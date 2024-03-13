@@ -229,8 +229,7 @@ methods.reorderTeam = async (body, user) => {
   //  const userTeams = await Team.find({ user: user._id }).lean();
 
     const userTeamIds = userTeams.map(team => team._id.toString());
-    const teamIds = teams.map(team => team.id);
-
+    const teamIds = teams.map(userTeams => userTeams.id);
     if (teamIds.length !== userTeamIds.length || !teamIds.every(id => userTeamIds.includes(id))) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
@@ -240,7 +239,6 @@ methods.reorderTeam = async (body, user) => {
       const team = teams[i];
       await Team.findByIdAndUpdate(team.id, { rank: team.rank });
     }
-
     return true;
   } catch (e) {
     throw e;

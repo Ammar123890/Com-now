@@ -69,7 +69,7 @@ controller.getMyProfile = async function (req, res, next) {
     const user = await User.findOne({ _id: req.user._id }).lean();
 
     res.json({
-      data: { user: userMethods.getUserPublicProfile(user,req.params.lang) },
+      data: { user: userMethods.getUserPublicProfile(user, req.params.lang) },
       success: true,
       message: "User successful",
     });
@@ -99,13 +99,13 @@ controller.verifyEmail = async function (req, res, next) {
       return;
     }
 
-    try{
+    try {
       await User.findOneAndUpdate(
-      { _id: id },
-      { otp: null, isVerified: true }
-    ).lean();
+        { _id: id },
+        { otp: null, isVerified: true }
+      ).lean();
 
-    }catch(e){
+    } catch (e) {
       console.log(e)
     }
     const url = path.resolve(
@@ -402,7 +402,6 @@ controller.setUserOrder = async function (req, res, next) {
   try {
     const { lang = "en" } = req.body;
     const error = helpers.setUserOrderValidation(req.body);
-
     if (error) {
       throw new Error(error);
     }
@@ -417,17 +416,12 @@ controller.setUserOrder = async function (req, res, next) {
         if (!user) {
           throw new Error(errorStrings.ONE_MORE_USER_NOT_EXIST[lang]);
         }
-
         return user;
       })
     );
-
     await UserOrder.updateOne(
       { team: req.body.team },
-      {
-        user: req.user._id,
-        orders: req.body.orders,
-      },
+      { order: req.body.orders },
       { upsert: true }
     );
 
@@ -440,6 +434,28 @@ controller.setUserOrder = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
+controller.getUserOrder = async function (req, res, next) {
+  try {
+    const { lang = "en" } = req.query;
+    const userOrder = await UserOrder.findOne({
+      team: req.query.team,
+    }).lean();
+
+    if (!userOrder) {
+      throw new Error(errorStrings.USER_ORDER_NOT_FOUND[lang]);
+    }
+
+    res.json({
+      data: { userOrder },
+      success: true,
+      message: "Successfull",
+    });
+
+  } catch (e) {
+    next({ message: e, status: 400 });
+  }
+}
 
 controller.deleteUser = async function (req, res, next) {
   try {
