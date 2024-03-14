@@ -36,6 +36,9 @@ controller.createDefaultTeam = async function (user) {
       { name: "allTeamMember" },
       user,
     );
+    const userOrder = await userOrderModel.create({
+      team: team._id,
+    });
 
     return team;
 
