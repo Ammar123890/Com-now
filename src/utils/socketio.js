@@ -29,36 +29,41 @@ module.exports = (httpServer, app) => {
 
     socket.join(socket.user._id.toString());
 
+    // Function to handle broadcasting offline status to a team
+    async function broadcastOfflineStatus(io, teamId, disconnectedUser) {
+      const allTeamUsers = await User.find({
+        $or: [{ defaultTeam: teamId }, { team: teamId }],
+        _id: { $ne: disconnectedUser._id } // Exclude the disconnected user
+      }).lean();
+
+      // Emit the offline event to all users in the team except the disconnected one
+      allTeamUsers.forEach((item) => {
+        io.to(item._id.toString()).emit("offline-user", {
+          user: disconnectedUser,
+        });
+      });
+    }
+
+
     socket.on("disconnect", async () => {
       logger.printLabel("Socket is disconnected: ");
 
-      const userID = socket.user._id.toString();
-      const onlineUsers = io.sockets.adapter.rooms.get(userID) || new Set();
+      // Mark the user as offline in the database
+      await userMethods.toggleOnline({ isOnline: false }, socket.user);
 
-      if (onlineUsers.size == 0) {
-        await userMethods.toggleOnline({ isOnline: false }, socket.user);
+      // Broadcast to default team
+      if (socket.user.defaultTeam) {
+        await broadcastOfflineStatus(io, socket.user.defaultTeam, socket.user);
+      }
 
-        // Notify offline event only if team exist
-        if (socket.user.team) {
-          const responses = await Promise.all([
-            User.find({ team: socket.user.team }).lean(),
-            teamMethods.getOnlineUsers({
-              team: socket.user.team,
-            }),
-          ]);
-
-          const allUsers = await responses[0];
-          const onlineUsers = await responses[1];
-
-          allUsers.forEach((item) => {
-            socket.to(item._id.toString()).emit("offline-user", {
-              onlineUsers,
-              user: socket.user,
-            });
-          });
+      // Broadcast to other teams
+      if (socket.user.team && socket.user.team.length) {
+        for (const teamId of socket.user.team) {
+          await broadcastOfflineStatus(io, teamId, socket.user);
         }
       }
     });
+
 
     socket.on("call", (payload, callback) => {
       socketMethods.callUser(payload, callback, socket);
@@ -70,26 +75,43 @@ module.exports = (httpServer, app) => {
 
     await userMethods.toggleOnline({ isOnline: true }, socket.user);
 
-    // Notify online event only if team exist
-    if (socket.user.team) {
-      const responses = await Promise.all([
-        teamMethods.getOnlineUsers({
-          team: socket.user.team,
-        }),
-        User.find({ team: socket.user.team }).lean(),
-      ]);
+    // Function to handle broadcasting to a team
+    async function broadcastOnlineStatus(io, teamId, onlineUserCount) {
+      const allUsers = await User.find({
+        $or: [{ defaultTeam: teamId }, { team: teamId }],
+        isOnline: true,
+      }).lean();
 
-      const onlineUsers = responses[0];
-      const allUsers = responses[1];
+
 
       allUsers.forEach((item) => {
-        socket.to(item._id.toString()).emit("online-user", {
-          onlineUsers,
+        io.to(item._id.toString()).emit("online-user", {
+          onlineUserCount,
           user: socket.user,
         });
       });
     }
+
+
+
+    // Check if the user has a default team and broadcast to it
+    if (socket.user.defaultTeam) {
+      const onlineUsersDefaultTeam = await teamMethods.getOnlineUsers({ team: socket.user.defaultTeam, type: "team" }, socket.user);
+
+      await broadcastOnlineStatus(io, socket.user.defaultTeam, onlineUsersDefaultTeam);
+    }
+
+    // Broadcast to other teams
+    if (socket.user.team && socket.user.team.length) {
+      for (const teamId of socket.user.team) {
+        if (String(teamId) !== String(socket.user.defaultTeam)) { // Prevent double broadcasting
+          const onlineUsersOtherTeams = await teamMethods.getOnlineUsers({ team: teamId, type: "other" }, socket.user);
+          await broadcastOnlineStatus(io, teamId, onlineUsersOtherTeams);
+        }
+      }
+    }
+
   });
 };
 
-//
+

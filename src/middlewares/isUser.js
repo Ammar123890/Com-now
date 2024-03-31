@@ -57,12 +57,12 @@ const isTokenValid = async (authorization, req) => {
         userType: "doctor",
       });
 
-      if (
-        !userDoctor.subscription.isSubscribed &&
-        !isAllowedWithoutSubscription
-      ) {
-        throw new Error(errorStrings.SUBSCRIPTION_NEEDED[lang]);
-      }
+      // if (
+      //   !userDoctor.subscription.isSubscribed &&
+      //   !isAllowedWithoutSubscription
+      // ) {
+      //   throw new Error(errorStrings.SUBSCRIPTION_NEEDED[lang]);
+      // }
     }
 
     return authToken;

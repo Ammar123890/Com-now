@@ -86,10 +86,10 @@ controller.getTeamById = async function (req, res, next) {
 
 controller.getOnlineUsers = async function (req, res, next) {
 
-  console.log(req.params.lang);
+
   try {
     const onlineUsers = await teamMethods.getOnlineUsers(
-      { team: req.params.id, lang: req.params.lang },
+      { team: req.params.id, lang: req.params.lang, type: req.query.type},
       req.user
     );
 

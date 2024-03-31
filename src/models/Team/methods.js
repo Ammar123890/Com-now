@@ -20,7 +20,7 @@ methods.createTeam = async (body, user) => {
     const userTeams = await Team.countDocuments({ user: user._id });
 
     // Create a new team
-    const team = new Team({ user: user._id, name: teamName, rank: userTeams-1});
+    const team = new Team({ user: user._id, name: teamName, rank: userTeams - 1 });
     await team.save();
 
     // Update User: Set 'defaultTeam' if teamName is 'allTeamMember', else push to 'team' array
@@ -100,7 +100,6 @@ methods.getTeamById = async (body, user) => {
   const lang = body.lang || "en";
   try {
     const team = await Team.findById(body.id).lean();
-    console.log(team);
     if (!team) {
       throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
     }
@@ -142,108 +141,116 @@ methods.editTeam = async (body, user, groupId) => {
   }
 };
 
-methods.getOnlineUsers = async (body) => {
+methods.getOnlineUsers = async (body, user) => {
   try {
     const lang = body.lang || "en";
     if (!body.team) {
       throw new Error(errorStrings.TEAM_ID_REQUIRED[lang]);
     }
 
-    const query = {
-      team: body.team,
-      isOnline: true,
-    };
 
-    const onlineUsers = await User.countDocuments(query);
+    if (body.type == "team") {
+      query = {
+        defaultTeam: body.team,
+        isOnline: true,
+      };
+    } else {
+      query = {
+        team: body.team,
+        isOnline: true,
+      };
+    }
 
-    return onlineUsers;
-  } catch (e) {
-    throw e;
+      const onlineUsers = await User.countDocuments(query);
+
+      return onlineUsers;
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  methods.getTeamDetails = async (body, user) => {
+    try {
+      const query = {
+        user: user._id,
+      };
+
+      if (body && body.team) {
+        query._id = body.team;
+      }
+
+      const team = await Team.findOne(query).lean();
+
+      if (!team) {
+        return null;
+      }
+
+      const onlineUsers = await User.countDocuments({
+        team: team._id,
+        isOnline: true,
+      });
+
+      return { ...team, onlineUsers };
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  methods.deleteById = async (teamId, user) => {
+    try {
+      // Delete the team
+      const team = await Team.findByIdAndDelete(teamId);
+      if (!team) {
+        throw new Error('Team not found');
+      }
+
+      // Delete the team from the user's team array
+      await User.findByIdAndUpdate(
+        user._id,
+        { $pull: { team: team._id } }
+      );
+
+      // Remove the team from other team members
+      await User.updateMany(
+        { team: { $in: [team._id] }, userType: "team-member" },
+        { $pull: { team: team._id } }
+      );
+
+      return team._id;
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  methods.reorderTeam = async (body, user) => {
+    // it takes an array of team ids and the ranks of the teams from 0 onwards
+
+    try {
+      const lang = body.lang || "en";
+      const teams = body.teams;
+
+      // Check if the user has all the teams apart from the default team which name is 'allTeamMember'
+      const userTeams = await Team.find({ user: user._id, name: { $ne: "allTeamMember" } }).lean();
+
+
+      //  const userTeams = await Team.find({ user: user._id }).lean();
+
+      const userTeamIds = userTeams.map(team => team._id.toString());
+      const teamIds = teams.map(userTeams => userTeams.id);
+      if (teamIds.length !== userTeamIds.length || !teamIds.every(id => userTeamIds.includes(id))) {
+        throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
+      }
+
+      // Update the ranks of the teams
+      for (let i = 0; i < teams.length; i++) {
+        const team = teams[i];
+        await Team.findByIdAndUpdate(team.id, { rank: team.rank });
+      }
+      return true;
+    } catch (e) {
+      throw e;
+    }
   }
-};
-
-methods.getTeamDetails = async (body, user) => {
-  try {
-    const query = {
-      user: user._id,
-    };
-
-    if (body && body.team) {
-      query._id = body.team;
-    }
-
-    const team = await Team.findOne(query).lean();
-
-    if (!team) {
-      return null;
-    }
-
-    const onlineUsers = await User.countDocuments({
-      team: team._id,
-      isOnline: true,
-    });
-
-    return { ...team, onlineUsers };
-  } catch (e) {
-    throw e;
-  }
-};
-
-methods.deleteById = async (teamId, user) => {
-  try {
-    // Delete the team
-    const team = await Team.findByIdAndDelete(teamId);
-    if (!team) {
-      throw new Error('Team not found');
-    }
-
-    // Delete the team from the user's team array
-    await User.findByIdAndUpdate(
-      user._id,
-      { $pull: { team: team._id } }
-    );
-
-    // Remove the team from other team members
-    await User.updateMany(
-      { team: { $in: [team._id] }, userType: "team-member" },
-      { $pull: { team: team._id } }
-    );
-
-    return team._id;
-  } catch (e) {
-    throw e;
-  }
-};
-
-methods.reorderTeam = async (body, user) => {
-  // it takes an array of team ids and the ranks of the teams from 0 onwards
-
-  try {
-    const lang = body.lang || "en";
-    const teams = body.teams;
-
-    // Check if the user has all the teams apart from the default team which name is 'allTeamMember'
-    const userTeams = await Team.find({ user: user._id, name: { $ne: "allTeamMember" } }).lean();
 
 
-  //  const userTeams = await Team.find({ user: user._id }).lean();
-
-    const userTeamIds = userTeams.map(team => team._id.toString());
-    const teamIds = teams.map(userTeams => userTeams.id);
-    if (teamIds.length !== userTeamIds.length || !teamIds.every(id => userTeamIds.includes(id))) {
-      throw new Error(errorStrings.TEAM_NOT_EXIST[lang]);
-    }
-
-    // Update the ranks of the teams
-    for (let i = 0; i < teams.length; i++) {
-      const team = teams[i];
-      await Team.findByIdAndUpdate(team.id, { rank: team.rank });
-    }
-    return true;
-  } catch (e) {
-    throw e;
-  }
-}
-
-
-module.exports = methods;
+  module.exports = methods;

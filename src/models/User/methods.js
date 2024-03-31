@@ -358,7 +358,6 @@ methods.toggleOnline = async (body, user) => {
     };
 
     const userData = await User.findOneAndUpdate(query, payload);
-
     return userData;
   } catch (e) {
     throw e;
@@ -517,7 +516,7 @@ methods.loginTeamMember = async (body) => {
         //check if the user is blocked or not
         "blocked": false,
     };
-    console.log(query);
+
 
  
     const user = await User.findOne(query).populate("team").lean();
