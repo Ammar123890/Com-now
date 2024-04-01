@@ -79,4 +79,23 @@ controller.callStatusChange = async function (req, res, next) {
   }
 };
 
+controller.callTeam = async function (req, res, next) {
+  try {
+    const teamId = req.body.teamId; // Extract the teamId from the request body
+    const socket = req.app.get("socketIO"); // Get the socket.io instance
+
+    // Mimic the socket object structure expected by callTeam
+    const fakeSocket = { user: req.user };
+    await socketMethods.callTeam({ teamId: teamId }, fakeSocket, socket);
+
+    res.json({
+      success: true,
+      message: "Team call initiated successfully."
+    });
+  } catch (e) {
+    next({ message: e.message, status: 400 });
+  }
+};
+
+
 module.exports = controller;

@@ -15,7 +15,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/call", isUser, controller.callAUser);
-
   /**
    * @api {PATCH} /user/call/status Call status change
    * @apiName Call status change
@@ -30,4 +29,7 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.patch("/call/status", isUser, controller.callStatusChange);
+
+  router.post("/call-team", isUser, controller.callTeam);
+
 };

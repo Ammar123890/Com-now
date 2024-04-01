@@ -69,6 +69,7 @@ module.exports = (httpServer, app) => {
       socketMethods.callUser(payload, callback, socket);
     });
 
+
     socket.on("call-status-change", (payload, callback) => {
       socketMethods.callStatusChange(payload, callback, socket);
     });
@@ -110,6 +111,23 @@ module.exports = (httpServer, app) => {
         }
       }
     }
+
+    socket.on("call-team", async (data, callback) => {
+      try {
+        await socketMethods.callTeam(data, socket, io);
+        callback({
+          success: true,
+          message: "Call initiated to the team."
+        });
+      } catch (error) {
+        callback({
+          success: false,
+          message: error.message
+        });
+      }
+    });
+    
+    
 
   });
 };

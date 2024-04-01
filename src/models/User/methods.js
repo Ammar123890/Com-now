@@ -216,7 +216,13 @@ methods.callUser = async (body, user) => {
       throw new Error(errorStrings.CANNOT_SELF_CALL[lang]);
     }
 
-    const foundUser = await User.findOne({ _id: body.user, team: user.team });
+    const foundUser = await User.findOne({
+      _id: body.user,
+      $or: [
+        { defaultTeam: user.defaultTeam },
+        { team: { $in: user.team } }
+      ]
+    });
 
     if (!foundUser) {
       throw new Error(errorStrings.TEAM_MEMBER_NOT_EXIST[lang]);

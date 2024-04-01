@@ -45,17 +45,26 @@ firebaseAdmin.sendNotification = async function (payload) {
   }
 };
 
-firebaseAdmin.sendMulticastNotification = function (payload) {
-  const message = {
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
-    tokens: payload.tokens,
-    data: payload.data || {},
-  };
+firebaseAdmin.sendMulticastNotification = async function (payload) {
+  try {
+    const message = {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: payload.data,
+      tokens: payload.tokens, // Array of FCM tokens
+    };
 
-  return admin.messaging().sendMulticast(message);
+    // Send a message to the devices corresponding to the provided tokens
+    const response = await admin.messaging().sendMulticast(message);
+    console.log("Successfully sent multicast message:", response);
+    return { success: true, response };
+  } catch (e) {
+    console.error("Failed to send multicast message:", e);
+    return { success: false, error: e.message };
+  }
 };
+
 
 module.exports = firebaseAdmin;
