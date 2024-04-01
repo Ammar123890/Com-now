@@ -27,6 +27,8 @@ module.exports = (httpServer, app) => {
   io.on("connection", async (socket) => {
     logger.printLabel("A new socket connected: ");
 
+    socket.emit("welcome", "Welcome to the server, client!");
+
     socket.join(socket.user._id.toString());
 
     // Function to handle broadcasting offline status to a team
