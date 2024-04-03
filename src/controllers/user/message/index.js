@@ -33,7 +33,6 @@ controller.sendMessage = async function (req, res, next) {
 
     const notification = new Notification(payload);
     await notification.save();
-
     if (user.fcmToken) {
       const fromUser = {
         fullName: req.user.fullName,
@@ -45,6 +44,7 @@ controller.sendMessage = async function (req, res, next) {
       // const title = req.body.lang === "en" ? NEW_MESSAGE_EN : NEW_MESSAGE_DE;
       const title = NEW_MESSAGE_DE;
 
+ 
       const notificationPayload = {
         title: `${title} ${req.user.fullName}`,
         body: req.body.type === "audio" ? "Audio message" : req.body.text,
@@ -54,6 +54,7 @@ controller.sendMessage = async function (req, res, next) {
         token: user.fcmToken,
         removeCallCategory: true,
       };
+ 
 
       await firebaseAdmin.sendNotification(notificationPayload);
     }

@@ -72,6 +72,7 @@ const isTokenValid = async (authorization, req) => {
 };
 
 const isUser = async (req, _res, next) => {
+  console.log("isUser");
   try {
     const authToken = await isTokenValid(req.headers.authorization, req);
 
