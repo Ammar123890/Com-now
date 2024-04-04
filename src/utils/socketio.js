@@ -114,7 +114,7 @@ module.exports = (httpServer, app) => {
       }
     }
 
-    socket.on("call-team", async (data, callback) => {
+    socket.on("team-call", async (data, callback) => {
       try {
         await socketMethods.callTeam(data, socket, io);
         callback({
