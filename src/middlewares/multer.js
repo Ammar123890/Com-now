@@ -4,7 +4,7 @@ const randomstring = require("randomstring");
 const audioUploadConfig = multer.diskStorage({
   filename: function (req, file, cb) {
     console.log("Processing file:", file);
-    if (!file.originalname.match(/\.(mp3|wav)$/i)) {
+    if (!file.originalname.match(/\.(mp3|wav|m4a)$/i)) {
       return cb(new Error('Only audio files are allowed!'), false);
     }
     if (!file.originalname) {

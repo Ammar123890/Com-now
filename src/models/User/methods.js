@@ -205,7 +205,7 @@ methods.getUserPublicProfile = function (user, lang) {
   return user;
 };
 
-methods.callUser = async (body, user) => {
+methods.callUser = async (body, user, callId) => {
   try {
     const lang = body.lang || "en";
     if (!body.user) {
@@ -229,41 +229,24 @@ methods.callUser = async (body, user) => {
     }
 
     if (foundUser.fcmToken) {
-      const fromUser = {
-        fullName: user.fullName,
-        _id: user._id,
-        userType: user.userType,
-      };
-
       const notificationPayload = {
         title: `${user.fullName} is calling you`,
-        body: ` `,
+        body: ' ',  
         data: {
-          fromUser: JSON.stringify(fromUser),
+          fromUser: JSON.stringify({
+            fullName: user.fullName,
+            _id: user._id,
+            userType: user.userType,
+            callId: callId.toString()  // Include callId in the notification data
+          }),
           status: "pending",
           time: Date.now().toString(),
         },
         token: foundUser.fcmToken,
       };
 
-      // if (body.lang !== "en") {
-      notificationPayload.title = `Ping von ${user.fullName}`;
-      notificationPayload.body = ` `;
-      // }
-
       firebaseAdmin.sendNotification(notificationPayload);
     }
-
-    await User.findByIdAndUpdate(
-      { _id: user._id },
-      {
-        lastCall: {
-          to: foundUser._id,
-          status: "pending",
-          time: Date.now(),
-        },
-      }
-    );
 
     return null;
   } catch (e) {
@@ -271,85 +254,32 @@ methods.callUser = async (body, user) => {
   }
 };
 
-methods.callStatusChange = async (body, user) => {
+methods.callStatusChange = async (payload, user) => {
   try {
-    const lang = body.lang || "en";
-    const ALLOWED_STATUS = ["accepted", "rejected"];
-    if (!body.user) {
-      throw new Error(errorStrings.USER_ID_REQUIRED[lang]);
-    }
-    if (!body.status) {
-      throw new Error(errorStrings.STATUS_REQUIRED[lang]);
-    }
-
-    if (!ALLOWED_STATUS.includes(body.status)) {
-      throw new Error(errorStrings.UNSUPPORTED_STATUS[lang]);
-    }
-
-    const latestUser = await User.findOne({ _id: body.user }).select(
-      "+lastCall"
-    );
-
-    if (
-      !latestUser.lastCall ||
-      latestUser.lastCall.to.toString() !== user._id.toString()
-    ) {
-      throw new Error(errorStrings.DID_NOT_CALLED_BY_USER[lang]);
-    }
-
-    if (latestUser.lastCall.status !== "pending") {
-      throw new Error(errorStrings.CALL_ALREADY_ANSWERED[lang]);
-    }
-
-    latestUser.lastCall.status = body.status;
-    await latestUser.save();
+    const lang = payload.lang || "en";
+    const latestUser = await User.findById(payload.user);
 
     if (latestUser.fcmToken) {
-      logger.printLabel("Sending push notification");
-      const fromUser = {
-        fullName: user.fullName,
-        _id: user._id,
-        userType: user.userType,
-      };
-
       const notificationPayload = {
-        title: `${user.fullName} is calling you`,
-        body: ` `,
+        title: `${user.fullName} has ${payload.status} your call`,
+        body: ``, // Add details if necessary
         data: {
-          fromUser: JSON.stringify(fromUser),
-          status: body.status,
+          fromUser: JSON.stringify({
+            fullName: user.fullName,
+            _id: user._id,
+            userType: user.userType
+          }),
+          status: payload.status,
           time: Date.now().toString(),
         },
         token: latestUser.fcmToken,
         removeCallCategory: true,
       };
 
-      if (body.status === "accepted") {
-        // if (lang === "en") {
-        //   notificationPayload.title = `${user.fullName} accepted your call`;
-        //   notificationPayload.body = `${user.fullName} accepted your call`;
-        // } else {
-        // }
-        notificationPayload.title = `${user.fullName} nahm Ihren Anruf an`;
-        notificationPayload.body = ` `;
-      }
-
-      if (body.status === "rejected") {
-        // if (lang === "en") {
-        //   notificationPayload.title = `${user.fullName} rejected your call`;
-        //   notificationPayload.body = `${user.fullName} rejected your call`;
-        // } else {
-        // }
-        notificationPayload.title = `${user.fullName} hat Ihren Anruf abgelehnt`;
-        notificationPayload.body = ` `;
-      }
-      logger.print(notificationPayload);
-
       await firebaseAdmin.sendNotification(notificationPayload);
     }
-
-    return latestUser;
   } catch (e) {
+    console.error("Failed in business logic for call status:", e);
     throw e;
   }
 };

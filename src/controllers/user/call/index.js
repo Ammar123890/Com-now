@@ -62,6 +62,7 @@ controller.callStatusChange = async function (req, res, next) {
     const dataToReturn = await new Promise((resolve, reject) => {
       socketMethods.callStatusChange(
         req.body,
+        req.user,
         (data) => {
           if (!data.success) {
             reject(data.message);

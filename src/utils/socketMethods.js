@@ -3,36 +3,31 @@ const User = require("../models/User");
 
 const userMethods = require("../models/User/methods");
 const firebaseAdmin = require("./firebaseAdmin");
+const CallRecord = require('./../models/CallRecord/index'); 
+const mongoose = require('mongoose');
 
 socketMethods.callUser = async (payload, callback = () => {}, socket) => {
   try {
-    await userMethods.callUser(payload, socket.user);
-
-    socket.to(payload.user).emit("call", { user: socket.user });
-
-    callback({
-      success: true,
-      message: "Successful",
-      data: {},
+    const callRecord = new CallRecord({
+      caller: socket.user._id,
+      team: null, // No team for individual calls
+      callId: new mongoose.Types.ObjectId(), // Unique call identifier
+      responses: [{
+        member: payload.user, // The recipient of the call
+        status: 'pending'
+      }]
     });
-  } catch (e) {
-    callback({
-      success: false,
-      message: e.message,
-    });
-  }
-};
 
-socketMethods.callStatusChange = async (
-  payload,
-  callback = () => {},
-  socket
-) => {
-  try {
-    await userMethods.callStatusChange(payload, socket.user);
-    socket.to(payload.user).emit("call-status-change", {
+    // Save the call record
+    await callRecord.save();
+
+    // Proceed with additional user-specific logic
+    await userMethods.callUser(payload, socket.user, callRecord.callId);
+
+    // Emitting the call event to the recipient with callId
+    socket.to(payload.user).emit("call", {
       user: socket.user,
-      status: payload.status,
+      callId: callRecord.callId, // Include callId in the event data
     });
 
     callback({
@@ -41,7 +36,6 @@ socketMethods.callStatusChange = async (
       data: {},
     });
   } catch (e) {
-    console.log("E =>", e);
     callback({
       success: false,
       message: e.message,
@@ -49,52 +43,95 @@ socketMethods.callStatusChange = async (
   }
 };
 
-socketMethods.callTeam = async (data, socket, io) => {
+socketMethods.callStatusChange = async (payload, user, callback, socket) => {
   try {
-    const teamId = data.teamId; // Assuming this comes from the client request
-    const teamUsers = await User.find({
-      $or: [{ defaultTeam: teamId }, { team: teamId }],
-      _id: { $ne: socket.user._id } // Exclude the caller to prevent self-calling
+    const callRecord = await CallRecord.findOne({
+      callId: payload.callId,
+      'responses.member': user._id
     });
 
-    // No longer filtering by `isOnline`. Prepare notifications for all team members with a FCM token.
-    const tokens = teamUsers.filter(user => user.fcmToken).map(user => user.fcmToken);
-
-    if (tokens.length > 0) {
-      const multicastPayload = {
-        tokens: tokens,
-        title: `${socket.user.fullName} is calling the team.`,
-        data: { 
-          callType: 'teamCall',
-          teamId: teamId,
-          fromUser: JSON.stringify({
-            fullName: socket.user.fullName,
-            _id: socket.user._id.toString(),
-            userType: socket.user.userType,
-          }),
-        }
-      };
-
-      // Send a multicast notification to all team members
-      await firebaseAdmin.sendMulticastNotification(multicastPayload);
+    if (!callRecord) {
+      throw new Error("Call record not found or user is not a valid member of this call.");
     }
 
-    // Emit a real-time call event to each online team member's socket
+    const response = callRecord.responses.find(r => r.member.toString() === user._id.toString());
+    if (!response) {
+      throw new Error("Response for the user not found in call record.");
+    }
+
+    if (response.status !== 'pending') {
+      throw new Error("This call has already been answered.");
+    }
+
+    // Update the status in the call record
+    response.status = payload.status;
+    response.respondedAt = new Date();
+    await callRecord.save();
+
+    // Emitting the status change to the socket
+    socket.to(callRecord.caller.toString()).emit("call-status-change", {
+      user: user._id,
+      status: payload.status,
+      callId: payload.callId
+    });
+
+    // Call additional business logic and notification handling
+    await userMethods.callStatusChange(payload, user);
+
+    callback({
+      success: true,
+      message: "Call status updated successfully."
+    });
+  } catch (e) {
+    console.error("Error in callStatusChange:", e);
+    callback({
+      success: false,
+      message: e.message
+    });
+  }
+};
+
+
+socketMethods.callTeam = async (data, socket, io) => {
+
+  try {
+    const teamId = data.teamId;
+    const newCallRecord = new CallRecord({
+      caller: socket.user._id,
+      team: teamId
+    });
+
+    const teamUsers = await User.find({
+      $or: [{ defaultTeam: teamId }, { team: { $in: [teamId] } }],
+      _id: { $ne: socket.user._id }
+    });
+
+    newCallRecord.responses = teamUsers.map(user => ({
+      member: user._id
+    }));
+
+    await newCallRecord.save();
+
+    // Notify all team members
     teamUsers.forEach(teamUser => {
+      if (teamUser.fcmToken) {
+        // Send push notification logic
+      }
       if (teamUser.isOnline) {
         io.to(teamUser._id.toString()).emit("team-call", {
           fromUser: socket.user,
           teamId: teamId,
+          callId: newCallRecord.callId,
           message: `${socket.user.fullName} is calling the team.`
         });
       }
     });
-
   } catch (e) {
     console.error("Error in callTeam method:", e);
     throw e;
   }
 };
+
 
 
 
