@@ -16,7 +16,7 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.post("/message", isUser, messgaeController.sendMessage);
-
+  router.post("/messageGroup", isUser, messgaeController.sendMessageToGroup);
   /**
    * @api {GET} /user/message Fetch Message
    * @apiName Fetch Message
@@ -28,4 +28,6 @@ module.exports = function (router) {
    * @apiError success contains "false"
    */
   router.get("/message", isUser, messgaeController.getMessages);
+
+
 };

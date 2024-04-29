@@ -3,6 +3,7 @@ const helpers = require("./helpers");
 const Notification = require("../../../models/Notification");
 const firebaseAdmin = require("../../../utils/firebaseAdmin");
 const errorStrings = require("../../../config/errorStrings");
+const Team = require("../../../models/Team");
 
 const controller = {};
 
@@ -92,5 +93,57 @@ controller.getMessages = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
+controller.sendMessageToGroup = async function (req, res, next) {
+  try {
+    const { teamId, text, type } = req.body;
+    const lang = req.body.lang || "en";
+
+    // Validate input
+    const error = helpers.sendMessageValidation(req.body);
+    if (error) {
+      throw new Error(error);
+    }
+
+    // Fetch team members
+    const team = await Team.findById(teamId).populate('user');
+    if (!team) {
+      throw new Error('Team not found');
+    }
+
+    const users = await User.find({ team: teamId, blocked: false });
+    const tokens = users.map(user => user.fcmToken).filter(token => token != null);
+
+    const fromUser = {
+      fullName: req.user.fullName,
+      _id: req.user._id,
+      userType: req.user.userType,
+    };
+
+    const title = `Neue Nachricht von ${req.user.fullName}`;
+    const body = type === "audio" ? "Audio message" : text;
+
+    const notificationPayload = {
+      title,
+      body,
+      data: { fromUser: JSON.stringify(fromUser) },
+      tokens,
+    };
+
+    // Send notifications
+    const notificationResult = await firebaseAdmin.sendMulticastNotification(notificationPayload);
+    if (!notificationResult.success) {
+      throw new Error('Failed to send notifications');
+    }
+
+    res.json({
+      success: true,
+      message: "Messages sent successfully",
+    });
+  } catch (e) {
+    next({ message: e.message || 'Failed to send messages', status: 400 });
+  }
+};
+
 
 module.exports = controller;
