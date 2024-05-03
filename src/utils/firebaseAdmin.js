@@ -47,6 +47,7 @@ firebaseAdmin.sendNotification = async function (payload) {
 
 firebaseAdmin.sendMulticastNotification = async function (payload) {
   try {
+
     const message = {
       notification: {
         title: payload.title,
@@ -55,6 +56,7 @@ firebaseAdmin.sendMulticastNotification = async function (payload) {
       data: payload.data,
       tokens: payload.tokens, // Array of FCM tokens
     };
+
 
     // Send a message to the devices corresponding to the provided tokens
     const response = await admin.messaging().sendMulticast(message);

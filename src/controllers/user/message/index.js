@@ -8,6 +8,7 @@ const Team = require("../../../models/Team");
 const controller = {};
 
 controller.sendMessage = async function (req, res, next) {
+
   try {
     const error = helpers.sendMessageValidation(req.body);
     if (error) {
@@ -56,8 +57,11 @@ controller.sendMessage = async function (req, res, next) {
         removeCallCategory: true,
       };
  
-
+  
       await firebaseAdmin.sendNotification(notificationPayload);
+    }
+    else {
+      throw new Error('User not found with valid FCM token');
     }
 
     res.json({
@@ -100,7 +104,7 @@ controller.sendMessageToGroup = async function (req, res, next) {
     const lang = req.body.lang || "en";
 
     // Validate input
-    const error = helpers.sendMessageValidation(req.body);
+    const error = helpers.sendGroupMessageValidation(req.body);
     if (error) {
       throw new Error(error);
     }
@@ -113,6 +117,9 @@ controller.sendMessageToGroup = async function (req, res, next) {
 
     const users = await User.find({ team: teamId, blocked: false });
     const tokens = users.map(user => user.fcmToken).filter(token => token != null);
+    if(tokens.length === 0) {
+      throw new Error('No users found with valid FCM tokens');
+    }
 
     const fromUser = {
       fullName: req.user.fullName,
