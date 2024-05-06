@@ -74,29 +74,7 @@ controller.sendMessage = async function (req, res, next) {
   }
 };
 
-controller.getMessages = async function (req, res, next) {
-  try {
-    const messages = await Notification.find({
-      user: req.user._id,
-      isDeleted: false,
-      isActive: true,
-      type: "message",
-    })
-      .populate({
-        path: "message.sender",
-        select: ["fullName", "email"],
-      })
-      .sort({ createdAt: -1 });
 
-    res.json({
-      data: { messages: messages },
-      success: true,
-      message: "Successfull",
-    });
-  } catch (e) {
-    next({ message: e, status: 400 });
-  }
-};
 
 controller.sendMessageToGroup = async function (req, res, next) {
   try {
@@ -149,6 +127,30 @@ controller.sendMessageToGroup = async function (req, res, next) {
     });
   } catch (e) {
     next({ message: e.message || 'Failed to send messages', status: 400 });
+  }
+};
+
+controller.getMessages = async function (req, res, next) {
+  try {
+    const messages = await Notification.find({
+      user: req.user._id,
+      isDeleted: false,
+      isActive: true,
+      type: "message",
+    })
+      .populate({
+        path: "message.sender",
+        select: ["fullName", "email"],
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      data: { messages: messages },
+      success: true,
+      message: "Successfull",
+    });
+  } catch (e) {
+    next({ message: e, status: 400 });
   }
 };
 

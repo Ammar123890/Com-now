@@ -47,7 +47,6 @@ firebaseAdmin.sendNotification = async function (payload) {
 
 firebaseAdmin.sendMulticastNotification = async function (payload) {
   try {
-
     const message = {
       notification: {
         title: payload.title,
@@ -57,16 +56,25 @@ firebaseAdmin.sendMulticastNotification = async function (payload) {
       tokens: payload.tokens, // Array of FCM tokens
     };
 
+    // Log the message object for debugging
+    console.log("Sending multicast message with payload:", message);
 
     // Send a message to the devices corresponding to the provided tokens
     const response = await admin.messaging().sendMulticast(message);
-    console.log("Successfully sent multicast message:", response);
+    console.log("Multicast message response:", response);
+
+    // Check for any failures reported in the response
+    if (response.failureCount > 0) {
+      console.error("Failed tokens:", response.responses.filter(r => !r.success));
+    }
+
     return { success: true, response };
   } catch (e) {
-    console.error("Failed to send multicast message:", e);
-    return { success: false, error: e.message };
+    console.error("Exception when sending multicast message:", e);
+    return { success: false, error: e };
   }
 };
+
 
 
 module.exports = firebaseAdmin;
