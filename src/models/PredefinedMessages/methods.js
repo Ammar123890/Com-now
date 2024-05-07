@@ -81,14 +81,15 @@ methods.editMessage = async (body, user) => {
   return predefinedMessage;
 };
 
-methods.getAllMessages = async (user) => {
+methods.getAllMessages = async (user, sort) => {
   try {
-    console.log(user.defaultTeam)
+    console.log(user.defaultTeam);
     const query = {
       team: user.defaultTeam,
       isActive: true,
       isDeleted: false,
     };
+
     let orders = await PredefinedMessageOrder.findOne({ user: user._id });
     if (!orders) {
       orders = {
@@ -102,40 +103,35 @@ methods.getAllMessages = async (user) => {
     }, {});
 
     let predefinedMessages = await PredefinedMessage.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 }) // Sorting by creation time initially to ensure consistent load order
       .lean();
 
     predefinedMessages = predefinedMessages.map((item) => {
-      if (item._id in rankMap) {
-        item.rank = rankMap[item._id];
-      }
-
+      item.rank = rankMap[item._id] || Infinity; // Assign Infinity if rank is not set, for custom sort fallback
       return item;
     });
 
-    predefinedMessages = _.orderBy(predefinedMessages, ["rank"]);
+    // Determine the sort order based on the 'sort' parameter
+    switch (sort) {
+      case 'asc':
+        predefinedMessages = _.orderBy(predefinedMessages, ['text'], ['asc']); // Sorting by message text in ascending order
+        break;
+      case 'desc':
+        predefinedMessages = _.orderBy(predefinedMessages, ['text'], ['desc']); // Sorting by message text in descending order
+        break;
+      case 'custom':
+      default:
+        predefinedMessages = _.orderBy(predefinedMessages, ['rank'], ['asc']); // Default custom sorting by rank
+        break;
+    }
 
-    const { newData } = predefinedMessages.reduce(
-      (acc, item) => {
-        if (typeof item.rank === "number") {
-          acc.maxRank = item.rank;
-        } else {
-          item.rank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
-          acc.maxRank = acc.maxRank === -Infinity ? 1 : acc.maxRank + 1;
-        }
-
-        acc.newData.push(item);
-
-        return acc;
-      },
-      { maxRank: -Infinity, newData: [] }
-    );
-
-    return newData;
+    return predefinedMessages;
   } catch (e) {
     throw e;
   }
 };
+
+
 
 methods.deleteByTeamId = async (body) => {
   const messages = PredefinedMessage.deleteMany({

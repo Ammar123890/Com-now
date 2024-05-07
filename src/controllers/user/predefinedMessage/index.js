@@ -77,9 +77,10 @@ controller.editMessage = async function (req, res, next) {
 };
 
 controller.getMessage = async function (req, res, next) {
+  const sort = req.query.sort || 'custom'; 
   try {
     const predefinedMessages = await predefinedMessageMethods.getAllMessages(
-      req.user
+      req.user, sort
     );
 
     res.json({
@@ -91,6 +92,7 @@ controller.getMessage = async function (req, res, next) {
     next({ message: e, status: 400 });
   }
 };
+
 
 controller.setMessagesOrder = async function (req, res, next) {
   try {
