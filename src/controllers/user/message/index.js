@@ -75,7 +75,6 @@ controller.sendMessage = async function (req, res, next) {
 };
 
 
-
 controller.sendMessageToGroup = async function (req, res, next) {
   try {
     const { teamId } = req.body;
@@ -87,15 +86,36 @@ controller.sendMessageToGroup = async function (req, res, next) {
       throw new Error(error);
     }
 
-    // Fetch team members
+    // Fetch team
     const team = await Team.findById(teamId).populate('user');
     if (!team) {
       throw new Error('Team not found');
     }
 
     const users = await User.find({ team: teamId, blocked: false });
-    const tokens = users.map(user => user.fcmToken).filter(token => token != null);
-    if(tokens.length === 0) {
+    const tokens = [];
+    const notifications = [];
+
+    // Prepare notifications for each user
+    users.forEach(user => {
+      if (user.fcmToken) {
+        tokens.push(user.fcmToken);
+
+        const notification = new Notification({
+          user: user._id,
+          type: "message",
+          message: {
+            text: req.body.text,
+            sender: req.user._id,
+            receiver: user._id,
+            type: req.body.type,
+          },
+        });
+        notifications.push(notification.save());
+      }
+    });
+
+    if (tokens.length === 0) {
       throw new Error('No users found with valid FCM tokens');
     }
 
@@ -106,7 +126,7 @@ controller.sendMessageToGroup = async function (req, res, next) {
     };
 
     const title = `Neue Nachricht von ${req.user.fullName}`;
-   
+
     const notificationPayload = {
       title,
       body: req.body.type === "audio" ? "Audio message" : req.body.text,
@@ -114,10 +134,12 @@ controller.sendMessageToGroup = async function (req, res, next) {
       tokens,
     };
 
-    console.log('notificationPayload', notificationPayload);
+    // Send notifications and save notification records
+    const [notificationResult] = await Promise.all([
+      firebaseAdmin.sendMulticastNotification(notificationPayload),
+      ...notifications
+    ]);
 
-    // Send notifications
-    const notificationResult = await firebaseAdmin.sendMulticastNotification(notificationPayload);
     if (!notificationResult.success) {
       throw new Error('Failed to send notifications');
     }
@@ -130,6 +152,7 @@ controller.sendMessageToGroup = async function (req, res, next) {
     next({ message: e.message || 'Failed to send messages', status: 400 });
   }
 };
+
 
 controller.getMessages = async function (req, res, next) {
   try {
