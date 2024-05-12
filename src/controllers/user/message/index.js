@@ -78,7 +78,7 @@ controller.sendMessage = async function (req, res, next) {
 
 controller.sendMessageToGroup = async function (req, res, next) {
   try {
-    const { teamId, text, type } = req.body;
+    const { teamId } = req.body;
     const lang = req.body.lang || "en";
 
     // Validate input
@@ -106,14 +106,15 @@ controller.sendMessageToGroup = async function (req, res, next) {
     };
 
     const title = `Neue Nachricht von ${req.user.fullName}`;
-    const body = type === "audio" ? "Audio message" : text;
-
+   
     const notificationPayload = {
       title,
-      body,
+      body: req.body.type === "audio" ? "Audio message" : req.body.text,
       data: { fromUser: JSON.stringify(fromUser) },
       tokens,
     };
+
+    console.log('notificationPayload', notificationPayload);
 
     // Send notifications
     const notificationResult = await firebaseAdmin.sendMulticastNotification(notificationPayload);
