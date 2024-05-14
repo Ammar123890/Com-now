@@ -19,6 +19,10 @@ firebaseAdmin.sendNotification = async function (payload) {
       apns: {
         payload: {
           aps: {
+            alert: {
+              title: payload.title,
+              body: payload.body,
+            },
             sound: "default",
             category: "call",
           },
@@ -35,7 +39,7 @@ firebaseAdmin.sendNotification = async function (payload) {
     if (payload.removeCallCategory) {
       delete message.apns.payload.aps.category;
     }
-    
+
     const response = await admin.messaging().send(message);
     console.log("Notification success ==>", response);
     return { success: true, response };
@@ -44,6 +48,7 @@ firebaseAdmin.sendNotification = async function (payload) {
     return { success: false, error: e };
   }
 };
+
 
 firebaseAdmin.sendMulticastNotification = async function (payload) {
   try {
@@ -54,10 +59,25 @@ firebaseAdmin.sendMulticastNotification = async function (payload) {
       },
       data: payload.data,
       tokens: payload.tokens, // Array of FCM tokens
+      android: {
+        notification: {
+          sound: "default",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: payload.title,
+              body: payload.body,
+            },
+            sound: "default",
+            category: "call",
+          },
+        },
+      },
     };
 
-    // Log the message object for debugging
-    console.log("Sending multicast message with payload:", message);
 
     // Send a message to the devices corresponding to the provided tokens
     const response = await admin.messaging().sendMulticast(message);
@@ -74,6 +94,7 @@ firebaseAdmin.sendMulticastNotification = async function (payload) {
     return { success: false, error: e };
   }
 };
+
 
 
 
