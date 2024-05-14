@@ -52,7 +52,7 @@ schema.plugin(uniqueValidator, { message: "{PATH} already exist." });
 schema.plugin(mongooseLeanVirtuals);
 schema.virtual("message.audioUrl").get(function () {
   if (this.message.type === "audio") {
-    return keys.BASE_URL.replace("api", "") + this.message.text;
+    return this.message.text;
   }
 })
 
