@@ -504,4 +504,35 @@ methods.deleteUser = async (body) => {
   return null;
 };
 
+methods.getMemberDoctor = async (member, language) => {
+  try {
+    const lang =  language || "en";
+    const user = await User.findOne({ _id: member }).lean();
+    if (!user) {
+      throw new Error(errorStrings.USER_NOT_FOUND[lang]);
+    }
+
+    // Find the doctor who created the user (team member)
+    const doctor = await User.findOne({ _id: user.createdBy }).select('id defaultTeam email initials fcmToken userType fullName userName isOnline').lean();
+    if (!doctor) {
+      throw new Error(errorStrings.DOCTOR_NOT_FOUND[lang]);  // Assume there's a similar error string for doctors
+    }
+    return {
+      id: doctor._id,
+      defaultTeam: doctor.defaultTeam,
+      email: doctor.email,
+      initials: doctor.initials,
+      fcmToken: doctor.fcmToken,
+      userType: doctor.userType,
+      fullName: doctor.fullName,
+      userName: doctor.userName,
+      isOnline: doctor.isOnline,
+    };
+
+  } catch (e) {
+    throw e;
+  }
+}
+
+
 module.exports = methods;

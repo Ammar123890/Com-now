@@ -477,4 +477,22 @@ controller.deleteUser = async function (req, res, next) {
   }
 };
 
+controller.getMemberDoc = async function (req, res, next) {
+  try {
+    const { lang = "en" } = req.query;
+    const user = req.user._id;
+
+    const doctorData = await userMethods.getMemberDoctor(user, lang);
+
+    res.json({
+      data: { user: doctorData },
+      success: true,
+      message: "Successfull",
+    });
+  } catch (e) {
+    next({ message: e.message, status: 400 });
+  }
+};
+
+
 module.exports = controller;

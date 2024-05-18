@@ -211,6 +211,13 @@ module.exports = {
     fr: "Utilisateur introuvable",
     it: "Utente non trovato",
   },
+  DOCTOR_NOT_FOUND: {
+    en: "Doctor not found",
+    de: "Arzt nicht gefunden",
+    es: "Médico no encontrado",
+    fr: "Médecin introuvable",
+    it: "Medico non trovato",
+  },
   AUTHORIZATION_DENIED: {
     en: "Authorization denied",
     de: "Autorisierung verweigert",

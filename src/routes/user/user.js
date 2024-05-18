@@ -190,4 +190,7 @@ module.exports = function (router) {
   router.patch("/members/order", isUser, userController.setUserOrder);
   
   router.get('/members/order/get', isUser, userController.getUserOrder);
+
+  router.get('/member/myDoc' , isTeamMember, userController.getMemberDoc);
+
 };
