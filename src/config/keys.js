@@ -8,7 +8,8 @@ const keys = {
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY_CREATEEX,    
   BASE_URL: "https://com-now-10196bc087d0.herokuapp.com",
-  //BASE_URL: "http://localhost:5001",
+  BASE_VOICE: "https://com-now-10196bc087d0.herokuapp.com/",
+  //BASE_VOICE: "http://localhost:5001/",
 };
 
 if (process.env.NODE_ENV === "production") {

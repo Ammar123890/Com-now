@@ -6,7 +6,7 @@ controller.uploadVoiceMessage = async function (req, res, next) {
     res.json({
       data: {
         path: file.path,
-        audioUrl: keys.BASE_URL.replace("api", "") + file.path
+        audioUrl: keys.BASE_VOICE.replace("api", "") + file.path
       },
       success: true,
       message: "Successfull",
