@@ -181,7 +181,7 @@ methods.getMembers = async (req) => {
 
       let userOrder;
       if(teamId == req.user.defaultTeam)
-        userOrder = await UserOrder.findOne({ defaultTeam: teamId });
+        userOrder = await UserOrder.findOne({ team: teamId });
       else
         userOrder = await UserOrder.findOne({ team: teamId });
       if (!userOrder) {

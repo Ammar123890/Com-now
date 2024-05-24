@@ -398,7 +398,7 @@ methods.register = async (body) => {
       fullName: body.fullName,
       userName: body.userName,
       provider: ["password"],
-     isVerified: false
+      isVerified: false,
    //   isVerified: true
     
     };

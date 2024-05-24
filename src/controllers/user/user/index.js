@@ -405,12 +405,14 @@ controller.setUserOrder = async function (req, res, next) {
     if (error) {
       throw new Error(error);
     }
-
+    
+    //check id the request team is the default team
+    const teamKey = req.body.team == req.user.defaultTeam ? 'defaultTeam' : 'team'
     await Promise.all(
       req.body.orders.map(async (item) => {
         const user = await User.findOne({
           _id: item.user,
-          team: req.body.team,
+          [teamKey]: req.body.team,  
         });
 
         if (!user) {
