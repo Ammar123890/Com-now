@@ -87,20 +87,24 @@ controller.sendMessageToGroup = async function (req, res, next) {
     }
 
     // Fetch team
-    const team = await Team.findById(teamId).populate('user');
+    const team = await Team.findById(teamId);
     if (!team) {
       throw new Error('Team not found');
     }
 
+    // Determine if the teamId from request is the sender's default team
+    const isDefaultTeam = req.user.defaultTeam && req.user.defaultTeam.equals(teamId);
+    
     const users = await User.find({ team: teamId, blocked: false });
     const tokens = [];
     const notifications = [];
 
     // Prepare notifications for each user
     users.forEach(user => {
-      if (user.fcmToken) {
-        tokens.push(user.fcmToken);
+      // Check if user has left the team or group based on whether the team is the sender's default team
+      const hasLeft = isDefaultTeam ? user.leavedTeam : user.leavedGroup;
 
+      if (!hasLeft) {
         const notification = new Notification({
           user: user._id,
           type: "message",
@@ -112,36 +116,38 @@ controller.sendMessageToGroup = async function (req, res, next) {
           },
         });
         notifications.push(notification.save());
+
+        if (user.fcmToken) {
+          tokens.push(user.fcmToken);
+        }
       }
     });
 
-    if (tokens.length === 0) {
-      throw new Error('No users found with valid FCM tokens');
-    }
+    if (tokens.length > 0) {
+      const fromUser = {
+        fullName: req.user.fullName,
+        _id: req.user._id,
+        userType: req.user.userType,
+      };
 
-    const fromUser = {
-      fullName: req.user.fullName,
-      _id: req.user._id,
-      userType: req.user.userType,
-    };
+      const title = `Neue Nachricht von ${req.user.fullName}`;
 
-    const title = `Neue Nachricht von ${req.user.fullName}`;
+      const notificationPayload = {
+        title,
+        body: req.body.type === "audio" ? "Audio message" : req.body.text,
+        data: { fromUser: JSON.stringify(fromUser) },
+        tokens,
+      };
 
-    const notificationPayload = {
-      title,
-      body: req.body.type === "audio" ? "Audio message" : req.body.text,
-      data: { fromUser: JSON.stringify(fromUser) },
-      tokens,
-    };
+      // Send notifications and save notification records
+      const [notificationResult] = await Promise.all([
+        firebaseAdmin.sendMulticastNotification(notificationPayload),
+        ...notifications
+      ]);
 
-    // Send notifications and save notification records
-    const [notificationResult] = await Promise.all([
-      firebaseAdmin.sendMulticastNotification(notificationPayload),
-      ...notifications
-    ]);
-
-    if (!notificationResult.success) {
-      throw new Error('Failed to send notifications');
+      if (!notificationResult.success) {
+        throw new Error('Failed to send notifications');
+      }
     }
 
     res.json({
