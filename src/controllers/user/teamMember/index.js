@@ -9,11 +9,15 @@ const controller = {};
 controller.addMember = async function (req, res, next) {
   try {
     const { lang = "en", type, group } = req.body;
-    const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
-    const teamId = type === 'group' ? group : req.user.defaultTeam;
+    const defaultTeamId = req.user.defaultTeam;
+    const teamId = type === 'group' ? group : defaultTeamId;
 
+    // Determine maximum allowed users from the subscription
+    const maxAllowedUser = req.user.subscription?.subscription?.maxUsers || 0;
+
+    // Check existing user count against the max allowed
     const existingUsers = await User.count({
-      team: { $in: [teamId] },
+      team: { $in: [teamId, defaultTeamId] }, // Check for both team and group
       userType: "team-member",
     });
 
@@ -21,34 +25,43 @@ controller.addMember = async function (req, res, next) {
       throw new Error(errorStrings.CANNOT_ADD_MORE_MEMBERS[lang]);
     }
 
+    // Add member to the team/group
     const user = await teamMemberMethods.addMember(req.body, req.user, type, group);
 
-    // Update the UserOrder for the team
-    let userOrder = await UserOrder.findOne({ team: teamId });
+    // Function to update the UserOrder for a specific team or group
+    const updateUserOrder = async (teamOrGroupId) => {
+      let userOrder = await UserOrder.findOne({ team: teamOrGroupId });
 
-    if (!userOrder) {
-      // Create a new UserOrder if it doesn't exist
-      userOrder = new UserOrder({ team: teamId, order: [] });
+      if (!userOrder) {
+        userOrder = new UserOrder({ team: teamOrGroupId, order: [] });
+      }
+
+      const maxRank = userOrder.order.length > 0 ? userOrder.order[userOrder.order.length - 1].rank : 0;
+
+      userOrder.order.push({
+        user: user._id,
+        rank: maxRank + 1,
+      });
+
+      await userOrder.save();
+    };
+
+    // Update UserOrder for both the group and the default team
+    await updateUserOrder(teamId);
+    if (type === 'group' && group !== defaultTeamId) {
+      await updateUserOrder(defaultTeamId); // Only update the default team if it's different from the group
     }
-
-    const maxRank = userOrder.order.length > 0 ? userOrder.order[userOrder.order.length - 1].rank : 0;
-
-    userOrder.order.push({
-      user: user._id,
-      rank: maxRank + 1,
-    });
-
-    await userOrder.save();
 
     res.json({
       data: { user },
       success: true,
-      message: "Successful",
+      message: "Member added successfully to both group and team",
     });
   } catch (e) {
     next({ message: e, status: 400 });
   }
 };
+
 
 controller.reAddMember = async function (req, res, next) {
   try {
