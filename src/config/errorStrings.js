@@ -118,6 +118,13 @@ module.exports = {
     fr: "Le nom du membre du groupe est requis",
     it: "È richiesto il nome del membro del gruppo"
   },
+  TEAM_MEMBER_INITIALS_REQUIRED: {
+    en: "Group member initials is required",
+    de: "Die Initialen des Gruppenmitglieds sind erforderlich",
+    es: "Se requieren las iniciales del miembro del grupo",
+    fr: "Les initiales du membre du groupe sont requises",
+    it: "Le iniziali del membro del gruppo sono richieste"
+  },
   TEAM_MEMBER_ALREADY_IN_A_TEAM:
   {
     en: "Group member is already in a group",

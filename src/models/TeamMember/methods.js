@@ -15,6 +15,9 @@ methods.addMember = async (body, user, type, groupId) => {
     if (!body.firstName || !body.lastName) {
       throw new Error(errorStrings.TEAM_MEMBER_NAME_REQUIRED[lang]);
     }
+    if(!body.initials){
+      throw new Error(errorStrings.TEAM_MEMBER_INITIALS_REQUIRED[lang]);
+    }
 
     // Prepare the common payload
     var payload = {
