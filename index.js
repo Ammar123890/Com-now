@@ -34,7 +34,7 @@ app.use(express.static("doc"));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-require("./src/routes")(app);
+//require("./src/routes")(app);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
